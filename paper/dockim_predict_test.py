@@ -142,7 +142,28 @@ def dock_one(pdb_paths, mrc_path, resolution, out_path, recompute=False):
         return 2, e
 
 
-def make_predictions_dockim(nano=False, test_path="../data/testset/"):
+def dock_several(dockim_inputs):
+    # Parallel computation over inputs that are a list of pdb_path mrc_path resolution and out_path
+    l = multiprocessing.Lock()
+    pool = multiprocessing.Pool(processes=40, initializer=init, initargs=(l,))
+    dock = functools.partial(dock_one, recompute=False)
+    results = pool.starmap(dock, tqdm(dockim_inputs, total=len(dockim_inputs)), chunksize=1)
+
+    # Parse results
+    all_results = []
+    all_errors = []
+    for i, (return_code, runtime) in enumerate(results):
+        if return_code == 0:
+            all_results.append(runtime)
+        else:
+            all_results.append(-return_code)
+            all_errors.append((return_code, runtime))
+    for x in all_errors:
+        print(x)
+    pickle.dump((all_results, all_errors), open('results_timing_dockim.p', 'wb'))
+
+
+def get_inputs_dockim(nano=False, test_path="../data/testset/"):
     """
     Make predictions with all combinations of rotated units.
     :param nano:
@@ -168,25 +189,18 @@ def make_predictions_dockim(nano=False, test_path="../data/testset/"):
             out_path = os.path.join(pdb_dir, f'dockim_pred{"_nano" if nano else ""}_{n_pred}.pdb')
             input_pdbs.append(new_input)
             dockim_inputs.append((tuple(input_pdbs), in_mrc, resolution, out_path))
+    return dockim_inputs
 
-    # Parallel computation
-    l = multiprocessing.Lock()
-    pool = multiprocessing.Pool(processes=40, initializer=init, initargs=(l,))
-    dock = functools.partial(dock_one, recompute=False)
-    results = pool.starmap(dock, tqdm(dockim_inputs, total=len(dockim_inputs)), chunksize=1)
 
-    # Parse results
-    all_results = []
-    all_errors = []
-    for i, (return_code, runtime) in enumerate(results):
-        if return_code == 0:
-            all_results.append(runtime)
-        else:
-            all_results.append(-return_code)
-            all_errors.append((return_code, runtime))
-    for x in all_errors:
-        print(x)
-    pickle.dump((all_results, all_errors), open('results_timing_dockim.p', 'wb'))
+def make_predictions_dockim(nano=False, test_path="../data/testset/"):
+    """
+    Make predictions with all combinations of rotated units.
+    :param nano:
+    :param test_path:
+    :return:
+    """
+    dockim_inputs = get_inputs_dockim(nano=nano, test_path=test_path)
+    dock_several(dockim_inputs=dockim_inputs)
 
 
 def get_hit_rates_dockim(nano=False, test_path="../data/testset/"):
@@ -263,18 +277,36 @@ def get_hit_rates_dockim(nano=False, test_path="../data/testset/"):
 
 
 if __name__ == '__main__':
+    pass
     # GET DATA
-    for sorted_split in [True, False]:
-        test_path = f'../data/testset{"" if sorted_split else "_random"}'
-        for nano in [False, True]:
-            # for nano in [True]:
-            csv_in = f'../data/{"nano_" if nano else ""}csvs/{"sorted_" if sorted_split else ""}filtered_test.csv'
-            print('Getting data for ', string_rep(sorted_split=sorted_split, nano=nano))
-            # get_systems(csv_in=csv_in, nano=nano, test_path=test_path)
-            # Now let us get the prediction in all cases
+    # for sorted_split in [True, False]:
+    #     test_path = f'../data/testset{"" if sorted_split else "_random"}'
+    #     for nano in [False, True]:
+    #         # for nano in [True]:
+    #         csv_in = f'../data/{"nano_" if nano else ""}csvs/{"sorted_" if sorted_split else ""}filtered_test.csv'
+    #         print('Getting data for ', string_rep(sorted_split=sorted_split, nano=nano))
+    #         # get_systems(csv_in=csv_in, nano=nano, test_path=test_path)
+    #         # Now let us get the prediction in all cases
+    #
+    #         print('Making predictions for :', string_rep(nano=nano))
+    #         make_predictions_dockim(nano=nano, test_path=test_path)
+    #
+    #         print('Getting hit rates for :', string_rep(nano=nano))
+    #         get_hit_rates_dockim(nano=nano, test_path=test_path)
 
-            print('Making predictions for :', string_rep(nano=nano))
-            make_predictions_dockim(nano=nano, test_path=test_path)
+    # If some had to crash, relaunch problematic ones:
+    # inputs_dockim = []
+    # for sorted_split in [True, False]:
+    #     test_path = f'../data/testset{"" if sorted_split else "_random"}'
+    #     for nano in [False, True]:
+    #         inputs_dockim.extend(get_inputs_dockim(nano=nano, test_path=test_path))
+    # dock_several(inputs_dockim)
 
-            print('Getting hit rates for :', string_rep(nano=nano))
-            get_hit_rates_dockim(nano=nano, test_path=test_path)
+    # Quick runtime computation for dockim. This is a pessimistic estimate,
+    #    since it computes also over the ones where we dock 10 copies
+    # times, errors = pickle.load(open('results_timing_dockim.p', 'rb'))
+    # times.extend([3600 * 5 for err in errors if err[0] == 2])
+    # plt.hist(times)
+    # plt.show()
+    # print(np.mean(times))
+    # >>>2247
