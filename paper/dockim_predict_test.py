@@ -279,28 +279,27 @@ def get_hit_rates_dockim(nano=False, test_path="../data/testset/"):
 if __name__ == '__main__':
     pass
     # GET DATA
-    # for sorted_split in [True, False]:
-    #     test_path = f'../data/testset{"" if sorted_split else "_random"}'
-    #     for nano in [False, True]:
-    #         # for nano in [True]:
-    #         csv_in = f'../data/{"nano_" if nano else ""}csvs/{"sorted_" if sorted_split else ""}filtered_test.csv'
-    #         print('Getting data for ', string_rep(sorted_split=sorted_split, nano=nano))
-    #         # get_systems(csv_in=csv_in, nano=nano, test_path=test_path)
-    #         # Now let us get the prediction in all cases
-    #
-    #         print('Making predictions for :', string_rep(nano=nano))
-    #         make_predictions_dockim(nano=nano, test_path=test_path)
-    #
-    #         print('Getting hit rates for :', string_rep(nano=nano))
-    #         get_hit_rates_dockim(nano=nano, test_path=test_path)
+    for sorted_split in [True, False]:
+        test_path = f'../data/testset{"" if sorted_split else "_random"}'
+        for nano in [False, True]:
+            # for nano in [True]:
+            csv_in = f'../data/{"nano_" if nano else ""}csvs/{"sorted_" if sorted_split else ""}filtered_test.csv'
+            print('Getting data for ', string_rep(sorted_split=sorted_split, nano=nano))
+            # get_systems(csv_in=csv_in, nano=nano, test_path=test_path)
 
-    # If some had to crash, relaunch problematic ones:
-    # inputs_dockim = []
-    # for sorted_split in [True, False]:
-    #     test_path = f'../data/testset{"" if sorted_split else "_random"}'
-    #     for nano in [False, True]:
-    #         inputs_dockim.extend(get_inputs_dockim(nano=nano, test_path=test_path))
-    # dock_several(inputs_dockim)
+    # Doing all at the same times avoid side effects
+    inputs_dockim = []
+    for sorted_split in [True, False]:
+        test_path = f'../data/testset{"" if sorted_split else "_random"}'
+        for nano in [False, True]:
+            inputs_dockim.extend(get_inputs_dockim(nano=nano, test_path=test_path))
+    dock_several(inputs_dockim)
+
+    for sorted_split in [True, False]:
+        test_path = f'../data/testset{"" if sorted_split else "_random"}'
+        for nano in [False, True]:
+            print('Getting hit rates for :', string_rep(nano=nano))
+            get_hit_rates_dockim(nano=nano, test_path=test_path)
 
     # Quick runtime computation for dockim. This is a pessimistic estimate,
     #    since it computes also over the ones where we dock 10 copies
