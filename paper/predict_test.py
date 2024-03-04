@@ -212,10 +212,6 @@ def get_hit_rates(nano=False, test_path="../data/testset/", use_mixed_model=True
     all_res = {}
     with pymol2.PyMOL() as p:
         for step, ((pdb, mrc, resolution), selections) in enumerate(pdb_selections.items()):
-            # if pdb not in ['7U0X', '7XDB', '7XJ6', '7YVI', '7YVN', '7YVO', '7ZJL', '8DWW', '8DWX', '8DWY',
-            #                    '8GTP', '8H07', '8HEC', '8IL3']:
-            #     continue
-            # print(pdb)
             if not step % 20:
                 print(f"Done {step} / {len(pdb_selections)} in {time.time() - time_init}")
 
@@ -282,6 +278,9 @@ def string_rep(sorted_split=None, nano=None, mixed=None, num=None, dockim=None):
 if __name__ == '__main__':
     # TODO : understand why n<10 sometimes
     # mwe()
+
+    # To debug one
+    # get_hit_rates(nano=True, test_path='../data/testset', use_mixed_model=False)
 
     # GET DATA
     for sorted_split in [True, False]:

@@ -217,7 +217,7 @@ def get_hit_rates_dockim(nano=False, test_path="../data/testset/"):
     time_init = time.time()
     all_res = {}
     with pymol2.PyMOL() as p:
-        for step, ((pdb, mrc, resolution), selections) in enumerate(pdb_selections.items()):
+        for step, ((pdb, mrc, resolution), selections) in enumerate(sorted(pdb_selections.items())):
             # if not pdb == '8SB5':
             #     continue
             if not step % 20:
@@ -229,7 +229,7 @@ def get_hit_rates_dockim(nano=False, test_path="../data/testset/"):
             gt_com = []
             for i in range(len(selections)):
                 # We use the Fv GT in the vase of Fabs
-                gt_name = os.path.join(pdb_dir, f'gt_{"nano_" if nano else "fv_"}{i}.pdb')
+                gt_name = os.path.join(pdb_dir, f'gt_{"nano_" if nano else ""}{i}.pdb')
                 p.cmd.load(gt_name, 'gt')
                 gt_coords = p.cmd.get_coords('gt')
                 com = np.mean(gt_coords, axis=0)
@@ -282,10 +282,9 @@ if __name__ == '__main__':
     for sorted_split in [True, False]:
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
         for nano in [False, True]:
-            # for nano in [True]:
             csv_in = f'../data/{"nano_" if nano else ""}csvs/{"sorted_" if sorted_split else ""}filtered_test.csv'
             print('Getting data for ', string_rep(sorted_split=sorted_split, nano=nano))
-            # get_systems(csv_in=csv_in, nano=nano, test_path=test_path)
+            get_systems(csv_in=csv_in, nano=nano, test_path=test_path)
 
     # Doing all at the same times avoid side effects
     inputs_dockim = []
@@ -298,7 +297,7 @@ if __name__ == '__main__':
     for sorted_split in [True, False]:
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
         for nano in [False, True]:
-            print('Getting hit rates for :', string_rep(nano=nano))
+            print('Getting hit rates for :', string_rep(nano=nano, sorted_split=sorted_split))
             get_hit_rates_dockim(nano=nano, test_path=test_path)
 
     # Quick runtime computation for dockim. This is a pessimistic estimate,
