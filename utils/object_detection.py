@@ -68,7 +68,7 @@ def nms(pred_loc, n_objects=None, thresh=0.2, use_pd=False):
 
 
 def output_to_transforms(out_grid, mrc, n_objects=None, thresh=0.5,
-                         outmrc=None, classif_nano=False, default_nano=False, use_pd=False):
+                         outmrc=None, classif_nano=False, default_nano=False, use_pd=False,use_uy=False):
     """
     First we need to go from grid, complex -> rotation, translation
     Then we call the second one
@@ -108,7 +108,7 @@ def output_to_transforms(out_grid, mrc, n_objects=None, thresh=0.5,
             t = -t
 
         # Finally build the resulting rotation
-        uz_to_p = vector_to_rotation(predicted_rz)
+        uz_to_p = vector_to_rotation(predicted_rz, use_uy=use_uy)
         rotation = uz_to_p * Rotation.from_rotvec([0, 0, t])
         # rotation = uz_to_p * Rotation.from_rotvec([0, t, 0])
         # Assert that the rz with rotation matches predicted_rz

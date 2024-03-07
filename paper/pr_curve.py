@@ -12,20 +12,17 @@ if __name__ == '__main__':
 from paper.predict_test import string_rep
 
 
-def compute_hr(nano=False, test_path='../data/testset', num_setting=False, use_mixed_model=True, dockim=False):
+def compute_hr(nano=False, test_path='../data/testset', num_setting=False, dockim=False, suffix=''):
     """
     Compute the HR metric in the sense of the paper (using the actual number of prediction)
     :param nano:
     :param test_path:
     :return:
     """
-    if use_mixed_model:
-        all_res_path = os.path.join(test_path, f'all_res{"_dockim" if dockim else ""}{"_nano" if nano else ""}.p')
-    else:
-        all_res_path = os.path.join(test_path, f'all_res_fab.p')
+    all_res_path = os.path.join(test_path, f'all_res{suffix}{"_dockim" if dockim else ""}{"_nano" if nano else ""}.p')
     all_res = pickle.load(open(all_res_path, 'rb'))
 
-    num_pred_path = os.path.join(test_path, f'num_pred{"_nano" if nano else ""}.p')
+    num_pred_path = os.path.join(test_path, f'num_pred{suffix}{"_nano" if nano else ""}.p')
     num_pred_all = pickle.load(open(num_pred_path, 'rb'))
 
     all_hr = {}
@@ -72,8 +69,8 @@ def compute_hr(nano=False, test_path='../data/testset', num_setting=False, use_m
         if overpreds > 0 and underpreds > 0:
             print(pdb, 'winner !')
         all_hr[pdb] = (errors, num_gt)
-    print('Overpredictions : ', sum([x[1] for x in overpreds_list]), len(overpreds_list), overpreds_list)
-    print('Underpredictions : ', sum([x[1] for x in underpreds_list]), len(underpreds_list), underpreds_list)
+    # print('Overpredictions : ', sum([x[1] for x in overpreds_list]), len(overpreds_list), overpreds_list)
+    # print('Underpredictions : ', sum([x[1] for x in underpreds_list]), len(underpreds_list), underpreds_list)
 
     hit_rate_sys = np.mean([100 * (1 - errors / num_gt) for errors, num_gt in all_hr.values()])
     hit_rate_ab = 100 * (1 - np.sum([errors for errors, _ in all_hr.values()]) / np.sum(
@@ -90,16 +87,15 @@ def compute_all():
                                                  nano=nano,
                                                  dockim=True))
             compute_hr(test_path=test_path, nano=nano, num_setting=True, dockim=True)
-            for mixed in [False, True]:
+            for num_setting in [True, False]:
+                print('Results HR for :', string_rep(sorted_split=sorted_split,
+                                                     nano=nano,
+                                                     num=num_setting))
+                compute_hr(test_path=test_path, nano=nano, num_setting=num_setting)
                 # no specific nano model
-                if nano and not mixed:
-                    continue
-                for num_setting in [True, False]:
-                    print('Results HR for :', string_rep(sorted_split=sorted_split,
-                                                         nano=nano,
-                                                         mixed=mixed,
-                                                         num=num_setting))
-                    compute_hr(test_path=test_path, nano=nano, use_mixed_model=mixed, num_setting=num_setting)
+                if not nano:
+                    print('non mixed')
+                    compute_hr(test_path=test_path, nano=nano, num_setting=num_setting, suffix='_fab')
 
 
 def get_mean_std(hitlist):
@@ -205,7 +201,7 @@ if __name__ == '__main__':
     #           'Num in both:', len(nab_pdb.intersection(fab_pdb)))
     #     print(sorted(nab_pdb.intersection(fab_pdb)))
 
-    # # TO PLOT ONE
+    # # TO COMPUTE ONE
     # test_path = f'../data/testset'
     # # test_path = f'../data/testset_random'
     # compute_hr(test_path=test_path, nano=True, use_mixed_model=True, num_setting=False)

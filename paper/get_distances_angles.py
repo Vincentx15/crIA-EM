@@ -82,7 +82,7 @@ def get_angles_dist_dockim(nano=False, test_path="../data/testset/"):
     pickle.dump(all_res, open(outname_results, 'wb'))
 
 
-def get_angles_dist(nano=False, test_path="../data/testset/", num_setting=False):
+def get_angles_dist(nano=False, test_path="../data/testset/", num_setting=False, suffix=''):
     """
     Go over the predictions and computes the hit rates with each number of systems.
     :param nano:
@@ -115,7 +115,7 @@ def get_angles_dist(nano=False, test_path="../data/testset/", num_setting=False)
             # Now get the (sorted) list of predicted com
             pred_transforms = []
             for i in range(num_pred):
-                pred_name = os.path.join(pdb_dir, f'crai_pred{"_nano" if nano else ""}_{i}.pdb')
+                pred_name = os.path.join(pdb_dir, f'crai_pred{suffix}{"_nano" if nano else ""}_{i}.pdb')
                 if not os.path.exists(pred_name):
                     continue
                 dummy_sel = "polymer.protein and polymer.protein"

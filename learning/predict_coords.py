@@ -36,7 +36,7 @@ def crop_large_mrc(mrc, margin=12):
 
 def predict_coords(mrc_path, model, resample=True, normalize='max', outname=None, split_pred=False, outmrc=None,
                    device='cpu', n_objects=None, thresh=0.5, crop=0, classif_nano=False,
-                   default_nano=False, use_pd=False, verbose=True):
+                   default_nano=False, use_pd=False, verbose=True, use_uy=False):
     t0 = time.time()
     mrc = mrc_utils.MRCGrid.from_mrc(mrc_path)
     if resample:
@@ -59,7 +59,7 @@ def predict_coords(mrc_path, model, resample=True, normalize='max', outname=None
         out = model(mrc_grid)[0].cpu().numpy()
     transforms = output_to_transforms(out, mrc, n_objects=n_objects, thresh=thresh,
                                       outmrc=outmrc, classif_nano=classif_nano, default_nano=default_nano,
-                                      use_pd=use_pd)
+                                      use_pd=use_pd, use_uy=use_uy)
     if outname is not None:
         transforms_to_pdb(transforms=transforms, out_name=outname, split_pred=split_pred)
     return transforms

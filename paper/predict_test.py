@@ -134,7 +134,8 @@ def get_systems(csv_in='../data/csvs/sorted_filtered_test.csv',
             p.cmd.delete("in_pdb")
 
 
-def make_predictions(nano=False, gpu=0, test_path="../data/testset/", use_mixed_model=True, sorted_split=True):
+def make_predictions(nano=False, gpu=0, test_path="../data/testset/", use_mixed_model=True, sorted_split=True,
+                     use_pd=True, suffix='', model_path=None, use_uy=False):
     """
     Now let's make predictions for this test set with ns_final model.
     :param nano:
@@ -145,16 +146,18 @@ def make_predictions(nano=False, gpu=0, test_path="../data/testset/", use_mixed_
     pdb_selections = pickle.load(open(os.path.join(test_path, f'pdb_sels{"_nano" if nano else ""}.p'), 'rb'))
 
     model = SimpleHalfUnetModel(classif_nano=use_mixed_model, num_feature_map=32)
-    if use_mixed_model or nano:
-        if sorted_split:
-            model_path = os.path.join(script_dir, '../saved_models/ns_final_last.pth')
+    if model_path is None:
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        if use_mixed_model or nano:
+            if sorted_split:
+                model_path = os.path.join(script_dir, '../saved_models/ns_final_last.pth')
+            else:
+                model_path = os.path.join(script_dir, '../saved_models/nr_final_last.pth')
         else:
-            model_path = os.path.join(script_dir, '../saved_models/nr_final_last.pth')
-    else:
-        if sorted_split:
-            model_path = os.path.join(script_dir, '../saved_models/fs_final_last.pth')
-        else:
-            model_path = os.path.join(script_dir, '../saved_models/fr_final_last.pth')
+            if sorted_split:
+                model_path = os.path.join(script_dir, '../saved_models/fs_final_last.pth')
+            else:
+                model_path = os.path.join(script_dir, '../saved_models/fr_final_last.pth')
     model.load_state_dict(torch.load(model_path))
 
     time_init = time.time()
@@ -165,22 +168,17 @@ def make_predictions(nano=False, gpu=0, test_path="../data/testset/", use_mixed_
                 print(f"Done {step} / {len(pdb_selections)} in {time.time() - time_init}")
             pdb_dir = os.path.join(test_path, f'{pdb}_{mrc}')
             in_mrc = os.path.join(pdb_dir, "full_crop_resampled_2.mrc")
-            if use_mixed_model or nano:
-                out_name = os.path.join(pdb_dir, f'crai_pred{"_nano" if nano else ""}.pdb')
-            else:
-                out_name = os.path.join(pdb_dir, f'crai_pred_fab.pdb')
+            out_name = os.path.join(pdb_dir, f'crai_pred{suffix}{"_nano" if nano else ""}.pdb')
             predict_coords(mrc_path=in_mrc, outname=out_name, model=model, device=gpu, split_pred=True,
-                           n_objects=10, thresh=0.2, classif_nano=use_mixed_model, use_pd=True, verbose=False)
+                           n_objects=10, thresh=0.2, classif_nano=use_mixed_model, use_pd=use_pd, verbose=False,
+                           use_uy=use_uy)
 
             # TO GET num_pred
             transforms = predict_coords(mrc_path=in_mrc, outname=None, model=model, device=gpu, split_pred=True,
-                                        n_objects=None, thresh=0.2, classif_nano=use_mixed_model, use_pd=True,
-                                        verbose=False)
+                                        n_objects=None, thresh=0.2, classif_nano=use_mixed_model, use_pd=use_pd,
+                                        verbose=False, use_uy=use_uy)
             pred_number[pdb] = len(transforms)
-    if use_mixed_model:
-        pickle_name = f'num_pred{"_nano" if nano else ""}.p'
-    else:
-        pickle_name = f'num_pred_fab.p'
+    pickle_name = f'num_pred{suffix}{"_nano" if nano else ""}.p'
     pickle.dump(pred_number, open(os.path.join(test_path, pickle_name), 'wb'))
 
 
@@ -199,7 +197,7 @@ def compute_matching_hungarian(actual_pos, pred_pos, thresh=10):
     return gt_found
 
 
-def get_hit_rates(nano=False, test_path="../data/testset/", use_mixed_model=True):
+def get_hit_rates(nano=False, test_path="../data/testset/", suffix=''):
     """
     Go over the predictions and computes the hit rates with each number of systems.
     :param nano:
@@ -234,10 +232,7 @@ def get_hit_rates(nano=False, test_path="../data/testset/", use_mixed_model=True
             predicted_com = []
             for i in range(10):
                 # for i in range(len(selections)):
-                if use_mixed_model or nano:
-                    out_name = os.path.join(pdb_dir, f'crai_pred{"_nano" if nano else ""}_{i}.pdb')
-                else:
-                    out_name = os.path.join(pdb_dir, f'crai_pred_fab{"_nano" if nano else ""}_{i}.pdb')
+                out_name = os.path.join(pdb_dir, f'crai_pred{suffix}{"_nano" if nano else ""}_{i}.pdb')
                 if not os.path.exists(out_name):
                     # Not sure why but sometimes fail to produce 10 systems.
                     # Still gets 5-6 for small systems. Maybe the grid is too small.
@@ -253,10 +248,7 @@ def get_hit_rates(nano=False, test_path="../data/testset/", use_mixed_model=True
             hits_thresh = compute_matching_hungarian(gt_com, predicted_com)
             gt_hits_thresh = list(range(1, len(gt_com) + 1)) + [len(gt_com)] * (len(predicted_com) - len(gt_com))
             all_res[pdb] = (gt_hits_thresh, hits_thresh, resolution)
-    if use_mixed_model or nano:
-        outname = os.path.join(test_path, f'all_res{"_nano" if nano else ""}.p')
-    else:
-        outname = os.path.join(test_path, f'all_res_fab.p')
+    outname = os.path.join(test_path, f'all_res{suffix}{"_nano" if nano else ""}.p')
     pickle.dump(all_res, open(outname, 'wb'))
 
 
@@ -275,6 +267,59 @@ def string_rep(sorted_split=None, nano=None, mixed=None, num=None, dockim=None):
     return s
 
 
+def compute_all():
+    """
+    Get the tables results
+    :return:
+    """
+    for sorted_split in [True, False]:
+        test_path = f'../data/testset{"" if sorted_split else "_random"}'
+        for nano in [False, True]:
+            csv_in = f'../data/{"nano_" if nano else ""}csvs/{"sorted_" if sorted_split else ""}filtered_test.csv'
+            print('Getting data for ', string_rep(sorted_split=sorted_split, nano=nano))
+            get_systems(csv_in=csv_in, nano=nano, test_path=test_path)
+            # Now let us get the prediction in all cases
+            print('Making predictions for :', string_rep(nano=nano, mixed=True))
+            make_predictions(nano=nano, test_path=test_path, use_mixed_model=True, gpu=1)
+            get_hit_rates(nano=nano, test_path=test_path)
+
+            # No models are dedicated to nano only, for Fabs, use the fab_only model
+            if not nano:
+                print('Making predictions for :', string_rep(nano=nano, mixed=False))
+                make_predictions(nano=nano, test_path=test_path, use_mixed_model=False, gpu=1, suffix='_fab')
+                get_hit_rates(nano=nano, test_path=test_path, suffix='_fab')
+
+
+def compute_ablations():
+    """
+    Get ablation results on the random fab split:
+    - no OT model
+    - no PD
+    - uy model
+    :return:
+    """
+    test_path = f'../data/testset_random"'
+    # Get the no_ot predictions
+    print('Making predictions for no ot')
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    model_path = os.path.join(script_dir, '../saved_models/TODOns_final_last.pth')
+    make_predictions(nano=False, test_path=test_path, gpu=1, model_path=model_path, suffix='_no_ot')
+
+    # Get the no_PD predictions
+    print('Making predictions for no pd')
+    make_predictions(nano=False, test_path=test_path, gpu=1, use_pd=False, suffix='_no_pd')
+
+    # Get the uy predictions
+    print('Making predictions for uy')
+    model_path = os.path.join(script_dir, '../saved_models/TODOns_final_last.pth')
+    make_predictions(nano=False, test_path=test_path, gpu=1, model_path=model_path, use_uy=True, suffix='_uy')
+
+    print('Getting hit rates')
+    get_hit_rates(nano=False, test_path=test_path, suffix='_no_ot')
+    get_hit_rates(nano=False, test_path=test_path, suffix='_no_pd')
+    get_hit_rates(nano=False, test_path=test_path, suffix='_uy')
+
+
 if __name__ == '__main__':
     # TODO : understand why n<10 sometimes
     # mwe()
@@ -283,17 +328,8 @@ if __name__ == '__main__':
     # get_hit_rates(nano=True, test_path='../data/testset', use_mixed_model=False)
 
     # GET DATA
-    for sorted_split in [True, False]:
-        test_path = f'../data/testset{"" if sorted_split else "_random"}'
-        for nano in [False, True]:
-            csv_in = f'../data/{"nano_" if nano else ""}csvs/{"sorted_" if sorted_split else ""}filtered_test.csv'
-            print('Getting data for ', string_rep(sorted_split=sorted_split, nano=nano))
-            get_systems(csv_in=csv_in, nano=nano, test_path=test_path)
-            # Now let us get the prediction in all cases
-            for mixed in [False, True]:
-                # No models are dedicated to nano only
-                if nano and not mixed:
-                    continue
-                print('Making predictions for :', string_rep(nano=nano, mixed=mixed))
-                make_predictions(nano=nano, test_path=test_path, use_mixed_model=mixed, gpu=1)
-                get_hit_rates(nano=nano, test_path=test_path, use_mixed_model=mixed)
+    # compute_all()
+
+    # GET ABLATIONS
+    compute_ablations()
+
