@@ -220,7 +220,7 @@ def get_hit_rates(nano=False, test_path="../data/testset/", use_mixed_model=True
             # First get the list of GT com
             gt_com = []
             for i in range(len(selections)):
-                # We use the Fv GT in the vase of Fabs
+                # We use the Fv GT in the case of Fabs
                 gt_name = os.path.join(pdb_dir, f'gt_{"nano_" if nano else "fv_"}{i}.pdb')
                 p.cmd.load(gt_name, 'gt')
                 gt_coords = p.cmd.get_coords('gt')

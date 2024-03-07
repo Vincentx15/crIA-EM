@@ -23,10 +23,11 @@ def compute_hr(nano=False, test_path='../data/testset', num_setting=False, use_m
         all_res_path = os.path.join(test_path, f'all_res{"_dockim" if dockim else ""}{"_nano" if nano else ""}.p')
     else:
         all_res_path = os.path.join(test_path, f'all_res_fab.p')
+    all_res = pickle.load(open(all_res_path, 'rb'))
 
     num_pred_path = os.path.join(test_path, f'num_pred{"_nano" if nano else ""}.p')
-    all_res = pickle.load(open(all_res_path, 'rb'))
     num_pred_all = pickle.load(open(num_pred_path, 'rb'))
+
     all_hr = {}
     overpreds_list = []
     underpreds_list = []
@@ -81,16 +82,54 @@ def compute_hr(nano=False, test_path='../data/testset', num_setting=False, use_m
     print(f"{hit_rate_ab:.1f}")
 
 
-def plot_pr_curve(nano=False, test_path='../data/testset', use_mixed_model=True, dockim=False):
-    if use_mixed_model:
-        outname = os.path.join(test_path, f'all_res{"_dockim" if dockim else ""}{"_nano" if nano else ""}.p')
-    else:
-        outname = os.path.join(test_path, f'all_res_fab.p')
-    all_res = pickle.load(open(outname, 'rb'))
-    all_precisions = []
-    all_gt = []
-    all_preds = []
-    for pdb, (gt_hits_thresh, hits_thresh, resolution) in all_res.items():
+def compute_all():
+    for sorted_split in [True, False]:
+        test_path = f'../data/testset{"" if sorted_split else "_random"}'
+        for nano in [False, True]:
+            print('Results HR for :', string_rep(sorted_split=sorted_split,
+                                                 nano=nano,
+                                                 dockim=True))
+            compute_hr(test_path=test_path, nano=nano, num_setting=True, dockim=True)
+            for mixed in [False, True]:
+                # no specific nano model
+                if nano and not mixed:
+                    continue
+                for num_setting in [True, False]:
+                    print('Results HR for :', string_rep(sorted_split=sorted_split,
+                                                         nano=nano,
+                                                         mixed=mixed,
+                                                         num=num_setting))
+                    compute_hr(test_path=test_path, nano=nano, use_mixed_model=mixed, num_setting=num_setting)
+
+
+def get_mean_std(hitlist):
+    hitlist = np.stack(hitlist)
+    hitlist_mean = np.mean(hitlist, axis=0)
+    hitlist_std = np.std(hitlist, axis=0)
+    return hitlist_mean, hitlist_std
+
+
+def plot_in_between(ax, x_axis, mean, std, **kwargs):
+    ax.plot(x_axis, mean, **kwargs)
+    upper = mean + std
+    upper[upper > 1] = 1
+    lower = mean - std
+    lower[lower < 0] = 0
+    ax.fill_between(x_axis, upper, lower, alpha=0.5)
+
+
+def plot_pr_curve(nano=False, test_path='../data/testset', title=None, savefig=None):
+    methods = {
+        r'\texttt{CrAI}': os.path.join(test_path, f'all_res{"_nano" if nano else ""}.p'),
+        r'\texttt{dock in map}': os.path.join(test_path, f'all_res_dockim{"_nano" if nano else ""}.p'),
+    }
+    # if not nano:
+    #     methods['fab'] = os.path.join(test_path, f'all_res_fab.p')
+
+    all_res_dict = {method: pickle.load(open(method_outpath, 'rb')) for method, method_outpath in methods.items()}
+    all_parsed_dict = {method: ([], [], []) for method in all_res_dict.keys()}
+    pdb_selections = pickle.load(open(os.path.join(test_path, f'pdb_sels{"_nano" if nano else ""}.p'), 'rb'))
+    for step, (pdb, mrc, resolution) in enumerate(pdb_selections.keys()):
         if test_path == '../data/testset':
             # Misclassified nano in sorted
             if pdb == '7YC5':
@@ -99,66 +138,59 @@ def plot_pr_curve(nano=False, test_path='../data/testset', use_mixed_model=True,
             # Systems containing both Fab and nAb in random split
             if pdb in ['7PIJ', '7SK5', '7WPD', '7XOD', '7ZLJ', '8HIK']:
                 continue
-        gt_hits_thresh = np.array(gt_hits_thresh)
-        hits_thresh = np.array(hits_thresh)
-        num_gt = np.max(gt_hits_thresh)
-        precision = hits_thresh / gt_hits_thresh
-        all_precisions.append(precision)
-        all_gt.append(gt_hits_thresh / num_gt)
-        all_preds.append(hits_thresh / num_gt)
-        # if precision[-1] < 0.9:
-        #     print(pdb, num_gt, hits_thresh)
-    all_precisions = np.stack(all_precisions)
-    all_precisions_mean = np.mean(all_precisions, axis=0)
-    all_precisions_std = np.std(all_precisions, axis=0)
+        for method, res_dict in all_res_dict.items():
+            gt_hits_thresh, hits_thresh, resolution = res_dict[pdb]
+            gt_hits_thresh = np.array(gt_hits_thresh)
+            hits_thresh = np.array(hits_thresh)
+            num_gt = np.max(gt_hits_thresh)
+            precision = hits_thresh / gt_hits_thresh
+            method_lists = all_parsed_dict[method]
+            method_lists[0].append(precision)
+            method_lists[1].append(gt_hits_thresh / num_gt)
+            method_lists[2].append(hits_thresh / num_gt)
+            # if precision[-1] < 0.9:
+            #     print(pdb, method, num_gt, hits_thresh)
 
-    all_gt = np.stack(all_gt)
-    all_gt_mean = np.mean(all_gt, axis=0)
-    all_gt_std = np.std(all_gt, axis=0)
+    plotting_dict = {}
+    for method, (all_precisions, all_gt, all_preds) in all_parsed_dict.items():
+        all_precisions_mean, all_precisions_std = get_mean_std(all_precisions)
+        all_gt_mean, all_gt_std = get_mean_std(all_gt)
+        all_preds_mean, all_preds_std = get_mean_std(all_preds)
+        plotting_dict[method] = (all_precisions_mean, all_precisions_std, all_gt_mean,
+                                 all_gt_std, all_preds_mean, all_preds_std)
 
-    all_preds = np.stack(all_preds)
-    all_preds_mean = np.mean(all_preds, axis=0)
-    all_preds_std = np.std(all_preds, axis=0)
-
+    # Setup matplotlib
     plt.rcParams.update({'font.size': 14})
     plt.rcParams['text.usetex'] = True
     plt.rc('grid', color='grey', alpha=0.5)
     plt.grid(True)
-    plt.legend()
     ax = plt.gca()
     ax.set_xlabel(r'Num prediction')
     ax.set_ylabel(r'Hits')
-
     x = range(1, 11)
-    ax = plt.gca()
 
-    def plot_in_between(ax, mean, std, **kwargs):
-        ax.plot(x, mean, **kwargs)
-        ax.fill_between(x, mean + std, mean - std, alpha=0.5)
+    for i, (method, results) in enumerate(plotting_dict.items()):
+        all_precisions_mean, all_precisions_std, all_gt_mean, all_gt_std, all_preds_mean, all_preds_std = results
+        # plot_in_between(ax, x, all_precisions_mean, all_precisions_std, label=method)
+        if i == 0:
+            plot_in_between(ax, x, all_gt_mean, all_gt_std, label=r'\texttt{Ground Truth}')
+        plot_in_between(ax, x, all_preds_mean, all_preds_std, label=method)
 
-    plot_in_between(ax, all_precisions_mean, all_precisions_std,
-                    label=rf'Fractional precision{"_fab" if not use_mixed_model else ""}')
-    # plot_in_between(ax, all_gt_mean, all_gt_std, label=r'\texttt{Ground Truth}')
-    # plot_in_between(ax, all_preds_mean, all_preds_std, label=r'\texttt{CrAI}')
-
+    # plt.xticks(['1', '2', '4', '6', '8', '10'])
+    plt.xticks([1, 2, 4, 6, 8, 10])
     plt.xlim((1, 10))
-    plt.ylim((0., 1))
+    plt.ylim((0., 1.1))
     # plt.ylim((0.5, 1))
-    plt.legend()
-    # plt.show()
+    plt.legend(loc='lower right')
+    if title is not None:
+        plt.title(title)
+    if savefig is not None:
+        plt.savefig(savefig)
+    plt.show()
 
 
 if __name__ == '__main__':
-    # plot_pr_curve(nano=False, use_mixed_model=True)
-    # plot_pr_curve(nano=False)
-    # plt.show()
-    # plot_pr_curve(nano=True)
-    # plt.show()
-
-    # plot_pr_curve(nano=False, dockim=True)
-    plot_pr_curve(nano=True)
-    plt.show()
-    oi
+    pass
     # Compute the # systems with both Fabs and nanobodies as they bug the validation a bit
     # for sorted_split in [True, False]:
     #     test_path = f'../data/testset{"" if sorted_split else "_random"}'
@@ -179,23 +211,13 @@ if __name__ == '__main__':
     # compute_hr(test_path=test_path, nano=True, use_mixed_model=True, num_setting=False)
     # # compute_hr(test_path=test_path, nano=True, use_mixed_model=True, num_setting=True, dockim=True)
 
+    # compute_all()
+
     for sorted_split in [True, False]:
-        test_path = f'../data/testset{"" if sorted_split else "_random"}'
-        for nano in [False, True]:
-            # for nano in [False]:
-            print('Results HR for :', string_rep(sorted_split=sorted_split,
-                                                 nano=nano,
-                                                 dockim=True))
-            compute_hr(test_path=test_path, nano=nano, num_setting=True, dockim=True)
-            for mixed in [False, True]:
-                # for mixed in [True]:
-                # no specific nano model
-                if nano and not mixed:
-                    continue
-                # for num_setting in [False]:
-                for num_setting in [True, False]:
-                    print('Results HR for :', string_rep(sorted_split=sorted_split,
-                                                         nano=nano,
-                                                         mixed=mixed,
-                                                         num=num_setting))
-                    compute_hr(test_path=test_path, nano=nano, use_mixed_model=mixed, num_setting=num_setting)
+        for nano in [True, False]:
+            test_path = f'../data/testset{"" if sorted_split else "_random"}'
+            sorted_title = rf'\texttt{{{"sorted" if sorted_split else "random"}}}'
+            nano_title = f'{"VHH" if nano else "Fabs"}'
+            title = rf'Hit rates for {sorted_title} {nano_title}'
+            save_title = f'../fig_paper/python/{"sorted" if sorted_split else "random"}_{"nano" if nano else "fab"}.pdf'
+            plot_pr_curve(nano=nano, test_path=test_path, title=title, savefig=save_title)
