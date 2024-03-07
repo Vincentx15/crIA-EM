@@ -82,19 +82,23 @@ def get_angles_dist_dockim(nano=False, test_path="../data/testset/"):
     pickle.dump(all_res, open(outname_results, 'wb'))
 
 
-def get_angles_dist(nano=False, test_path="../data/testset/", num_setting=False, suffix=''):
+def get_angles_dist(nano=False, test_path="../data/testset/", num_setting=False, suffix='', recompute=False):
     """
     Go over the predictions and computes the hit rates with each number of systems.
     :param nano:
     :param test_path:
     :return:
     """
-    pdb_selections = pickle.load(open(os.path.join(test_path, f'pdb_sels{"_nano" if nano else ""}.p'), 'rb'))
+    outfilename_results = f'angledist{suffix}{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p'
+    outname_results = os.path.join(test_path, outfilename_results)
+    if not recompute and os.path.exists(outname_results):
+        return
 
+    pdb_selections = pickle.load(open(os.path.join(test_path, f'pdb_sels{"_nano" if nano else ""}.p'), 'rb'))
     time_init = time.time()
     all_res = {}
     if not num_setting:
-        num_pred_path = os.path.join(test_path, f'num_pred{"_nano" if nano else ""}.p')
+        num_pred_path = os.path.join(test_path, f'num_pred{suffix}{"_nano" if nano else ""}.p')
         num_pred_all = pickle.load(open(num_pred_path, 'rb'))
 
     for step, ((pdb, mrc, resolution), selections) in enumerate(sorted(pdb_selections.items())):
@@ -129,8 +133,6 @@ def get_angles_dist(nano=False, test_path="../data/testset/", num_setting=False,
         except Exception as e:
             print("failed on pdb : ", pdb)
             all_res[pdb] = None
-    outname_results = os.path.join(test_path,
-                                   f'angledist{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p')
     pickle.dump(all_res, open(outname_results, 'wb'))
 
 
@@ -145,37 +147,71 @@ def get_results():
                 get_angles_dist(nano=nano, test_path=test_path, num_setting=num_setting)
 
 
-def plot_one(test_path=None, dockim=False, nano=False, num_setting=False, thresh=10):
+def compute_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10):
     if dockim:
         pickle_name_to_get = f'dockim_angledist{"_nano" if nano else ""}.p'
     else:
-        pickle_name_to_get = f'angledist{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p'
+        pickle_name_to_get = f'angledist{suffix}{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p'
     outname_results = os.path.join(test_path, pickle_name_to_get)
     results = pickle.load(open(outname_results, 'rb'))
-    sel_dists, sel_angles = list(), list()
+    sel_dists = list()
     for pdb, pdb_res in results.items():
         if pdb_res is None:
             continue
         dists, angles = pdb_res
         selector = dists < thresh
         sel_dists.extend(list(dists[selector]))
-        sel_angles.extend(list(np.asarray(angles)[selector]))
     print(f'{np.mean(sel_dists):.2f}')
-    plt.hist(sel_angles)
-    pass
 
 
-def plot_all():
+def get_distances_all():
     for sorted_split in [True, False]:
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
         for nano in [False, True]:
             print('Doing ', string_rep(sorted_split=sorted_split, nano=nano))
             plot_one(nano=nano, test_path=test_path, dockim=True, num_setting=True)
             for num_setting in [True, False]:
-                plot_one(nano=nano, test_path=test_path, num_setting=num_setting)
-            # plt.show()
+                compute_one(nano=nano, test_path=test_path, num_setting=num_setting)
+
+
+def plot_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10):
+    if dockim:
+        pickle_name_to_get = f'dockim_angledist{"_nano" if nano else ""}.p'
+    else:
+        pickle_name_to_get = f'angledist{suffix}{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p'
+    outname_results = os.path.join(test_path, pickle_name_to_get)
+    results = pickle.load(open(outname_results, 'rb'))
+    sel_angles = list()
+    for pdb, pdb_res in results.items():
+        if pdb_res is None:
+            continue
+        dists, angles = pdb_res
+        selector = dists < thresh
+        sel_angles.extend(list(np.asarray(angles)[selector]))
+    return sel_angles
+
+
+def plot_all():
+    test_path = f'../data/testset_random'
+    results = {}
+    get_angles_dist(nano=False, test_path=test_path, num_setting=False)
+    results['normal'] = plot_one(nano=False, test_path=test_path, num_setting=False)
+
+    get_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_ot')
+    results['no_ot'] = plot_one(nano=False, test_path=test_path, num_setting=False, suffix='_no_ot')
+
+    get_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_pd')
+    results['no_pd'] = plot_one(nano=False, test_path=test_path, num_setting=False, suffix='_no_pd')
+
+    get_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_uy')
+    results['uy'] = plot_one(nano=False, test_path=test_path, num_setting=False, suffix='_uy')
+
+    for key, val in results.items():
+        plt.hist(val, label=key)
+    plt.show()
 
 
 if __name__ == '__main__':
     # get_results()
+    # get_distances_all()
     plot_all()
