@@ -84,7 +84,7 @@ def get_angles_dist_dockim(nano=False, test_path="../data/testset/"):
 
 def get_angles_dist(nano=False, test_path="../data/testset/", num_setting=False, suffix='', recompute=False):
     """
-    Go over the predictions and computes the hit rates with each number of systems.
+    Go over the predictions and computes the angles and distances for each system.
     :param nano:
     :param test_path:
     :return:
@@ -136,7 +136,7 @@ def get_angles_dist(nano=False, test_path="../data/testset/", num_setting=False,
     pickle.dump(all_res, open(outname_results, 'wb'))
 
 
-def get_results():
+def get_angledist_results():
     for sorted_split in [True, False]:
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
         for nano in [False, True]:
@@ -147,7 +147,7 @@ def get_results():
                 get_angles_dist(nano=nano, test_path=test_path, num_setting=num_setting)
 
 
-def compute_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10):
+def get_distance_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10):
     if dockim:
         pickle_name_to_get = f'dockim_angledist{"_nano" if nano else ""}.p'
     else:
@@ -169,9 +169,9 @@ def get_distances_all():
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
         for nano in [False, True]:
             print('Doing ', string_rep(sorted_split=sorted_split, nano=nano))
-            plot_one(nano=nano, test_path=test_path, dockim=True, num_setting=True)
+            get_distance_one(nano=nano, test_path=test_path, dockim=True, num_setting=True)
             for num_setting in [True, False]:
-                compute_one(nano=nano, test_path=test_path, num_setting=num_setting)
+                get_distance_one(nano=nano, test_path=test_path, num_setting=num_setting)
 
 
 def plot_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10):

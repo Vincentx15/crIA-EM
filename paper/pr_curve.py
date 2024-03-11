@@ -98,6 +98,16 @@ def compute_all():
                     compute_hr(test_path=test_path, nano=nano, num_setting=num_setting, suffix='_fab')
 
 
+def compute_ablations():
+    test_path = '../data/testset_random'
+    print("no_ot")
+    compute_hr(test_path=test_path, nano=False, suffix='_no_ot')
+    print("no_pd")
+    compute_hr(test_path=test_path, nano=False, suffix='_no_pd')
+    print("uy")
+    compute_hr(test_path=test_path, nano=False, suffix='_uy')
+
+
 def get_mean_std(hitlist):
     hitlist = np.stack(hitlist)
     hitlist_mean = np.mean(hitlist, axis=0)
@@ -207,13 +217,18 @@ if __name__ == '__main__':
     # compute_hr(test_path=test_path, nano=True, use_mixed_model=True, num_setting=False)
     # # compute_hr(test_path=test_path, nano=True, use_mixed_model=True, num_setting=True, dockim=True)
 
+    # # TO COMPUTE ALL
     # compute_all()
 
-    for sorted_split in [True, False]:
-        for nano in [True, False]:
-            test_path = f'../data/testset{"" if sorted_split else "_random"}'
-            sorted_title = rf'\texttt{{{"sorted" if sorted_split else "random"}}}'
-            nano_title = f'{"VHH" if nano else "Fabs"}'
-            title = rf'Hit rates for {sorted_title} {nano_title}'
-            save_title = f'../fig_paper/python/{"sorted" if sorted_split else "random"}_{"nano" if nano else "fab"}.pdf'
-            plot_pr_curve(nano=nano, test_path=test_path, title=title, savefig=save_title)
+    # # TO COMPUTE ABLATIONS
+    compute_ablations()
+
+    # TO PLOT ALL
+    # for sorted_split in [True, False]:
+    #     for nano in [True, False]:
+    #         test_path = f'../data/testset{"" if sorted_split else "_random"}'
+    #         sorted_title = rf'\texttt{{{"sorted" if sorted_split else "random"}}}'
+    #         nano_title = f'{"VHH" if nano else "Fabs"}'
+    #         title = rf'Hit rates for {sorted_title} {nano_title}'
+    #         save_title = f'../fig_paper/python/{"sorted" if sorted_split else "random"}_{"nano" if nano else "fab"}.pdf'
+    #         plot_pr_curve(nano=nano, test_path=test_path, title=title, savefig=save_title)

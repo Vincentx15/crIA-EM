@@ -302,7 +302,7 @@ def compute_ablations():
     # Get the no_ot predictions
     print('Making predictions for no ot')
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    model_path = os.path.join(script_dir, '../saved_models/TODOns_final_last.pth')
+    model_path = os.path.join(script_dir, '../saved_models/fab_random_normalize_last.pth')
     make_predictions(nano=False, test_path=test_path, gpu=1, model_path=model_path, suffix='_no_ot')
 
     # Get the no_PD predictions
@@ -311,7 +311,7 @@ def compute_ablations():
 
     # Get the uy predictions
     print('Making predictions for uy')
-    model_path = os.path.join(script_dir, '../saved_models/TODOns_final_last.pth')
+    model_path = os.path.join(script_dir, '../saved_models/fr_uy_last.pth')
     make_predictions(nano=False, test_path=test_path, gpu=1, model_path=model_path, use_uy=True, suffix='_uy')
 
     print('Getting hit rates')
