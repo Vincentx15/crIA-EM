@@ -47,7 +47,7 @@ def compute_hr(nano=False, test_path='../data/testset', num_setting=False, docki
         else:
             num_pred = num_pred_all[pdb]
         overpreds = max(0, num_pred - num_gt)
-        found_hits = hits_thresh[num_pred - 1]
+        found_hits = hits_thresh[min(num_pred, 10) - 1]
         underpreds = num_gt - found_hits
         errors = overpreds + underpreds
 
@@ -66,8 +66,8 @@ def compute_hr(nano=False, test_path='../data/testset', num_setting=False, docki
             # more_would_help = hits_thresh[-1] > found_hits
             # print(pdb, num_pred, num_gt, found_hits, hits_thresh[num_gt - 1], hits_thresh, more_would_help)
             underpreds_list.append((pdb, underpreds))
-        if overpreds > 0 and underpreds > 0:
-            print(pdb, 'winner !')
+        # if overpreds > 0 and underpreds > 0:
+        #     print(pdb, 'winner !')
         all_hr[pdb] = (errors, num_gt)
     # print('Overpredictions : ', sum([x[1] for x in overpreds_list]), len(overpreds_list), overpreds_list)
     # print('Underpredictions : ', sum([x[1] for x in underpreds_list]), len(underpreds_list), underpreds_list)
@@ -101,10 +101,13 @@ def compute_all():
 def compute_ablations():
     test_path = '../data/testset_random'
     print("no_ot")
-    compute_hr(test_path=test_path, nano=False, suffix='_no_ot')
+    compute_hr(test_path=test_path, nano=False, num_setting=True, suffix='_no_ot')
+    compute_hr(test_path=test_path, nano=False, num_setting=False, suffix='_no_ot')
     print("no_pd")
+    compute_hr(test_path=test_path, nano=False, num_setting=True, suffix='_no_pd')
     compute_hr(test_path=test_path, nano=False, suffix='_no_pd')
     print("uy")
+    compute_hr(test_path=test_path, nano=False, num_setting=True, suffix='_uy')
     compute_hr(test_path=test_path, nano=False, suffix='_uy')
 
 
@@ -221,7 +224,7 @@ if __name__ == '__main__':
     # compute_all()
 
     # # TO COMPUTE ABLATIONS
-    compute_ablations()
+    # compute_ablations()
 
     # TO PLOT ALL
     # for sorted_split in [True, False]:

@@ -298,21 +298,23 @@ def compute_ablations():
     - uy model
     :return:
     """
-    test_path = f'../data/testset_random"'
+    test_path = f'../data/testset_random'
     # Get the no_ot predictions
     print('Making predictions for no ot')
     script_dir = os.path.dirname(os.path.realpath(__file__))
     model_path = os.path.join(script_dir, '../saved_models/fab_random_normalize_last.pth')
-    make_predictions(nano=False, test_path=test_path, gpu=1, model_path=model_path, suffix='_no_ot')
+    make_predictions(nano=False, test_path=test_path, gpu=0, use_mixed_model=False, model_path=model_path,
+                     suffix='_no_ot')
 
     # Get the no_PD predictions
     print('Making predictions for no pd')
-    make_predictions(nano=False, test_path=test_path, gpu=1, use_pd=False, suffix='_no_pd')
+    make_predictions(nano=False, test_path=test_path, gpu=0, use_pd=False, suffix='_no_pd')
 
     # Get the uy predictions
     print('Making predictions for uy')
     model_path = os.path.join(script_dir, '../saved_models/fr_uy_last.pth')
-    make_predictions(nano=False, test_path=test_path, gpu=1, model_path=model_path, use_uy=True, suffix='_uy')
+    make_predictions(nano=False, test_path=test_path, gpu=0, use_mixed_model=False, model_path=model_path, use_uy=True,
+                     suffix='_uy')
 
     print('Getting hit rates')
     get_hit_rates(nano=False, test_path=test_path, suffix='_no_ot')
@@ -332,4 +334,3 @@ if __name__ == '__main__':
 
     # GET ABLATIONS
     compute_ablations()
-

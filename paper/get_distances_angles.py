@@ -102,6 +102,8 @@ def get_angles_dist(nano=False, test_path="../data/testset/", num_setting=False,
         num_pred_all = pickle.load(open(num_pred_path, 'rb'))
 
     for step, ((pdb, mrc, resolution), selections) in enumerate(sorted(pdb_selections.items())):
+        # if not pdb=='7FAE':
+        #     continue
         if not step % 20:
             print(f"Done {step} / {len(pdb_selections)} in {time.time() - time_init}")
         pdb_dir = os.path.join(test_path, f'{pdb}_{mrc}')
@@ -114,7 +116,7 @@ def get_angles_dist(nano=False, test_path="../data/testset/", num_setting=False,
             if num_setting:
                 num_pred = len(selections)
             else:
-                num_pred = num_pred_all[pdb]
+                num_pred = min(num_pred_all[pdb], 9)
 
             # Now get the (sorted) list of predicted com
             pred_transforms = []
@@ -197,6 +199,24 @@ def plot_all():
     get_angles_dist(nano=False, test_path=test_path, num_setting=False)
     results['normal'] = plot_one(nano=False, test_path=test_path, num_setting=False)
 
+    get_angles_dist(nano=True, test_path=test_path, num_setting=False)
+    results['nano'] = plot_one(nano=True, test_path=test_path, num_setting=False)
+
+    get_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_uy', recompute=True)
+    results['uy'] = plot_one(nano=False, test_path=test_path, num_setting=False, suffix='_uy')
+
+    for key, val in results.items():
+        plt.hist(val, label=key, alpha=0.8)
+    plt.legend()
+    plt.show()
+
+
+def plot_ablation():
+    test_path = f'../data/testset_random'
+    results = {}
+    get_angles_dist(nano=False, test_path=test_path, num_setting=False)
+    results['normal'] = plot_one(nano=False, test_path=test_path, num_setting=False)
+
     get_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_ot')
     results['no_ot'] = plot_one(nano=False, test_path=test_path, num_setting=False, suffix='_no_ot')
 
@@ -207,7 +227,8 @@ def plot_all():
     results['uy'] = plot_one(nano=False, test_path=test_path, num_setting=False, suffix='_uy')
 
     for key, val in results.items():
-        plt.hist(val, label=key)
+        plt.hist(val, label=key, alpha=0.8)
+    plt.legend()
     plt.show()
 
 
@@ -215,3 +236,4 @@ if __name__ == '__main__':
     # get_results()
     # get_distances_all()
     plot_all()
+    # plot_ablation()
