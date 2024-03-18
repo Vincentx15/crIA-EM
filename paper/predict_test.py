@@ -79,7 +79,7 @@ def get_systems(csv_in='../data/csvs/sorted_filtered_test.csv',
         p.cmd.load(REF_PATH_NANO, "ref_nano")
         p.cmd.load(REF_PATH_FAB, 'ref_fab')
         for step, ((pdb, mrc, resolution), selections) in enumerate(pdb_selections.items()):
-            # if pdb != "8C7H":
+            # if pdb != "7YVN":
             #     continue
             if not step % 20:
                 print(f"Done {step} / {len(pdb_selections)}")
@@ -99,6 +99,7 @@ def get_systems(csv_in='../data/csvs/sorted_filtered_test.csv',
 
             # Get gt and rotated pdbs
             p.cmd.load(new_pdb_path, 'in_pdb')
+            all_rmsd = []
             for i, selection in enumerate(selections):
                 outpath_gt = os.path.join(new_dir_path, f'gt_{"nano_" if nano else ""}{i}.pdb')
                 sel = f'in_pdb and ({selection})'
@@ -131,6 +132,7 @@ def get_systems(csv_in='../data/csvs/sorted_filtered_test.csv',
                     outpath_gt_nano = os.path.join(new_dir_path, f'gt_nano_{i}.pdb')
                     p.cmd.save(outpath_gt_nano, "ref_nano")
                 p.cmd.delete("to_align")
+                all_rmsd.append(rmsd)
             p.cmd.delete("in_pdb")
 
 
@@ -323,14 +325,21 @@ def compute_ablations():
 
 
 if __name__ == '__main__':
+    pass
     # TODO : understand why n<10 sometimes
     # mwe()
 
-    # To debug one
-    # get_hit_rates(nano=True, test_path='../data/testset', use_mixed_model=False)
+    # To do one
+    # sorted_split = True
+    # nano = False
+    # csv_in = f'../data/{"nano_" if nano else ""}csvs/{"sorted_" if sorted_split else ""}filtered_test.csv'
+    # test_path = f'../data/testset{"" if sorted_split else "_random"}'
+    # get_systems(csv_in=csv_in, nano=nano, test_path=test_path)
+    # make_predictions(sorted_split=sorted_split, nano=nano, test_path=test_path)
+    # get_hit_rates(nano=True, test_path='../data/testset')
 
     # GET DATA
     # compute_all()
 
     # GET ABLATIONS
-    compute_ablations()
+    # compute_ablations()

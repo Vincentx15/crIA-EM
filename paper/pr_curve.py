@@ -29,6 +29,8 @@ def compute_hr(nano=False, test_path='../data/testset', num_setting=False, docki
     overpreds_list = []
     underpreds_list = []
     for pdb, (gt_hits_thresh, hits_thresh, resolution) in sorted(all_res.items()):
+        # if pdb not in {'8HJ0', '7YVI', '7XDB', '7YAJ', '8D7E', '8GOC', '8GTP'}:
+        #     continue
         if test_path == '../data/testset_random':
             # Systems containing both Fab and nAb in random split
             if pdb in ['7PIJ', '7SK5', '7WPD', '7XOD', '7ZLJ', '8HIK']:
@@ -56,27 +58,33 @@ def compute_hr(nano=False, test_path='../data/testset', num_setting=False, docki
             overpreds_list.append((pdb, overpreds))
             # Was this overpred useful ? (if found_hits > hits_thresh[num_gt - 1])
             # Actually useful only twice for fabs and twice for nano
-            # useful = found_hits > hits_thresh[num_gt - 1]
-            # print(pdb, num_pred, num_gt, found_hits, hits_thresh[num_gt - 1], hits_thresh, useful)
+            useful = found_hits > hits_thresh[num_gt - 1]
+            print(f'over\t {pdb} num_pred : {num_pred}, num_gt : {num_gt}, found_hits : {found_hits}, '
+                  f'hits with gt_num : {hits_thresh[num_gt - 1]}, raw results : {hits_thresh} '
+                  f'useful overpred : {useful}')
         if underpreds > 0:
             # Would we find it with more hits ?
             # Not so much with Fabs, some are close but further than 10, others are just missed.
             # 100% yes with nano
 
             # more_would_help = hits_thresh[-1] > found_hits
-            # print(pdb, num_pred, num_gt, found_hits, hits_thresh[num_gt - 1], hits_thresh, more_would_help)
+            # print(f'under\t {pdb} num_pred : {num_pred}, num_gt : {num_gt}, found_hits : {found_hits}, '
+            #       f'hits with gt_num : {hits_thresh[num_gt - 1]}, raw results : {hits_thresh} '
+            #       f'more would help : {more_would_help}')
             underpreds_list.append((pdb, underpreds))
         # if overpreds > 0 and underpreds > 0:
         #     print(pdb, 'winner !')
         all_hr[pdb] = (errors, num_gt)
-    # print('Overpredictions : ', sum([x[1] for x in overpreds_list]), len(overpreds_list), overpreds_list)
-    # print('Underpredictions : ', sum([x[1] for x in underpreds_list]), len(underpreds_list), underpreds_list)
+    print('Overpredictions : ', len(overpreds_list), sum([x[1] for x in overpreds_list]), overpreds_list)
+    print('Underpredictions : ', len(underpreds_list), sum([x[1] for x in underpreds_list]), underpreds_list)
+    failed_sys = [x[0] for x in overpreds_list + underpreds_list]
 
     hit_rate_sys = np.mean([100 * (1 - errors / num_gt) for errors, num_gt in all_hr.values()])
     hit_rate_ab = 100 * (1 - np.sum([errors for errors, _ in all_hr.values()]) / np.sum(
         [num_gt for _, num_gt in all_hr.values()]))
     print(f"{hit_rate_sys:.1f}")
     print(f"{hit_rate_ab:.1f}")
+    return overpreds_list + underpreds_list
 
 
 def compute_all():
@@ -214,11 +222,13 @@ if __name__ == '__main__':
     #           'Num in both:', len(nab_pdb.intersection(fab_pdb)))
     #     print(sorted(nab_pdb.intersection(fab_pdb)))
 
-    # # TO COMPUTE ONE
-    # test_path = f'../data/testset'
-    # # test_path = f'../data/testset_random'
-    # compute_hr(test_path=test_path, nano=True, use_mixed_model=True, num_setting=False)
-    # # compute_hr(test_path=test_path, nano=True, use_mixed_model=True, num_setting=True, dockim=True)
+    # TO COMPUTE ONE
+    test_path = f'../data/testset'
+    # test_path = f'../data/testset_random'
+    compute_hr(test_path=test_path, nano=False, num_setting=False)
+    print("nano")
+    compute_hr(test_path=test_path, nano=True, num_setting=False)
+    # compute_hr(test_path=test_path, nano=True, use_mixed_model=True, num_setting=True, dockim=True)
 
     # # TO COMPUTE ALL
     # compute_all()

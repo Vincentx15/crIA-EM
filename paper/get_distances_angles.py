@@ -15,17 +15,28 @@ if __name__ == '__main__':
 
 from paper.predict_test import string_rep
 from utils.object_detection import pdbsel_to_transforms
+from utils.rotation import rotation_to_supervision
 
 
 def match_transforms_to_angles_dist(gt_transforms, pred_transforms):
     # TODO : check RMSD
     gt_translations = [x[1] for x in gt_transforms]
     gt_rotations = [x[2] for x in gt_transforms]
-    gt_rz = [rotation.as_matrix()[:, 2] for rotation in gt_rotations]
+    gt_rz, gt_theta_u = [], []
+    for rotation in gt_rotations:
+        rz, theta = rotation_to_supervision(rotation)
+        theta_u = [np.cos(theta), np.sin(theta)]
+        gt_rz.append(rz)
+        gt_theta_u.append(theta_u)
 
     pred_translations = [x[1] for x in pred_transforms]
     pred_rotations = [x[2] for x in pred_transforms]
-    pred_rz = [rotation.as_matrix()[:, 2] for rotation in pred_rotations]
+    pred_rz, pred_theta_u = [], []
+    for rotation in pred_rotations:
+        rz, theta = rotation_to_supervision(rotation)
+        theta_u = [np.cos(theta), np.sin(theta)]
+        pred_rz.append(rz)
+        pred_theta_u.append(theta_u)
 
     dist_matrix = scipy.spatial.distance.cdist(pred_translations, gt_translations)
     row_ind, col_ind = scipy.optimize.linear_sum_assignment(dist_matrix)
@@ -37,8 +48,9 @@ def match_transforms_to_angles_dist(gt_transforms, pred_transforms):
         u2 = u2 / np.linalg.norm(u2)
         return np.arccos(np.dot(u1, u2)) * 180 / 3.14
 
-    angles = [get_angle(pred_rz[row], gt_rz[col]) for row, col in zip(row_ind, col_ind)]
-    return position_dists, angles
+    p_angles = [get_angle(pred_rz[row], gt_rz[col]) for row, col in zip(row_ind, col_ind)]
+    theta_angles = [get_angle(pred_theta_u[row], gt_theta_u[col]) for row, col in zip(row_ind, col_ind)]
+    return position_dists, p_angles, theta_angles
 
 
 def get_angles_dist_dockim(nano=False, test_path="../data/testset/"):
@@ -74,8 +86,8 @@ def get_angles_dist_dockim(nano=False, test_path="../data/testset/"):
                 all_res[pdb] = None
                 continue
             pred_transforms = pdbsel_to_transforms(out_name, antibody_selections=pymol_chain_sels, cache=False)
-            dists, angles = match_transforms_to_angles_dist(gt_transforms, pred_transforms)
-            all_res[pdb] = dists, angles
+            dists, angles_p, angles_theta = match_transforms_to_angles_dist(gt_transforms, pred_transforms)
+            all_res[pdb] = dists, angles_p, angles_theta
         except Exception as e:
             print('failed on pdb : ', pdb)
             all_res[pdb] = None
@@ -127,8 +139,8 @@ def get_angles_dist(nano=False, test_path="../data/testset/", num_setting=False,
         if len(pred_transforms) == 0:
             all_res[pdb] = None
             continue
-        dists, angles = match_transforms_to_angles_dist(gt_transforms, pred_transforms)
-        all_res[pdb] = dists, angles
+        dists, angles_p, angles_theta = match_transforms_to_angles_dist(gt_transforms, pred_transforms)
+        all_res[pdb] = dists, angles_p, angles_theta
     pickle.dump(all_res, open(outname_results, 'wb'))
 
 
@@ -150,24 +162,103 @@ def get_distance_one(test_path=None, dockim=False, nano=False, num_setting=False
         pickle_name_to_get = f'angledist{suffix}{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p'
     outname_results = os.path.join(test_path, pickle_name_to_get)
     results = pickle.load(open(outname_results, 'rb'))
-    sel_dists = list()
-    for pdb, pdb_res in results.items():
+
+    pdb_selections = pickle.load(open(os.path.join(test_path, f'pdb_sels{"_nano" if nano else ""}.p'), 'rb'))
+    all_sel_dists = list()
+    # useful for resolution plot
+    all_pdb_dists = dict()
+    for step, ((pdb, mrc, resolution), selections) in enumerate(sorted(pdb_selections.items())):
+        gt_num = len(selections)
+        pdb_res = results[pdb]
         if pdb_res is None:
             continue
-        dists, angles = pdb_res
-        selector = dists < thresh
-        sel_dists.extend(list(dists[selector]))
-    print(f'{np.mean(sel_dists):.2f}')
+        dists, *_ = pdb_res
+        # expand dists with underpreds
+        dists = np.array(list(dists) + [10 for _ in range(gt_num - len(dists))])
+
+        sel_dists = dists[dists < thresh]
+        # if sum(dists > thresh) > 0:
+        #     print(dockim, nano, num_setting, pdb)
+        all_sel_dists.extend(sel_dists)
+        all_pdb_dists[pdb] = list(dists)
+    print(f'{np.mean(all_sel_dists):.2f}')
+    return all_sel_dists, all_pdb_dists
 
 
 def get_distances_all():
+    res_dict = {}
     for sorted_split in [True, False]:
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
         for nano in [False, True]:
             print('Doing ', string_rep(sorted_split=sorted_split, nano=nano))
-            get_distance_one(nano=nano, test_path=test_path, dockim=True, num_setting=True)
+            dists = get_distance_one(nano=nano, test_path=test_path, dockim=True, num_setting=True)
+            res_dict[(True, sorted_split, nano, True)] = dists
             for num_setting in [True, False]:
-                get_distance_one(nano=nano, test_path=test_path, num_setting=num_setting)
+                dists = get_distance_one(nano=nano, test_path=test_path, num_setting=num_setting)
+                res_dict[(False, sorted_split, nano, num_setting)] = dists
+    return res_dict
+
+
+def scatter(proba, distances, alpha=0.3, noise_strength=0.02, fit=True):
+    # Adding random noise to the data
+
+    proba += noise_strength * np.random.randn(len(proba))
+    distances += noise_strength * np.random.randn(len(distances))
+
+    # Rest of the plot decorations
+    plt.rcParams.update({'font.size': 14})
+    plt.rcParams['text.usetex'] = True
+    # a= r'\texttt{dock\_in\_map} Template'
+    plt.rc('grid', color='grey', alpha=0.2)
+    plt.grid(True)
+    # Plotting the scatter data with transparency
+    sns_colors = sns.color_palette('colorblind', as_cmap=True)
+    plt.scatter(proba, distances, color=sns_colors[0], marker='o', alpha=alpha)
+
+    if fit:
+        # Linear fit
+        m, b = np.polyfit(proba, distances, 1)
+        x = np.linspace(proba.min(), proba.max())
+        plt.plot(x, m * x + b, color=sns_colors[1])
+        # plt.plot(all_probas_bench, m * all_probas_bench + b, color='red', label=f'Linear Fit: y={m:.2f}x+{b:.2f}')
+
+        # Calculating R^2 score
+        predicted = m * proba + b
+        from sklearn.metrics import r2_score
+        r2 = r2_score(distances, predicted)
+        plt.text(0.68, 0.86, rf'$y = {m:.2f} x + {b:.2f}$', transform=plt.gca().transAxes)
+        plt.text(0.66, 0.8, rf'$R^2 = {r2:.2f}$', transform=plt.gca().transAxes)
+
+
+def resolution_plot(sys=False, num_setting=False, dockim=False):
+    concatenated_dists = list()
+    concatenated_res = list()
+    res_dict = get_distances_all()
+    for sorted_split in [True, False]:
+        test_path = f'../data/testset{"" if sorted_split else "_random"}'
+        for nano in [False, True]:
+            pdb_selections = pickle.load(open(os.path.join(test_path, f'pdb_sels{"_nano" if nano else ""}.p'), 'rb'))
+            all_pdb_dists = res_dict[(dockim, sorted_split, nano, num_setting)][1]
+            for step, ((pdb, mrc, resolution), selections) in enumerate(sorted(pdb_selections.items())):
+                if pdb not in all_pdb_dists:
+                    continue
+                relevant_dists = [x if x < 10 else 10 for x in all_pdb_dists[pdb]]
+                if sys:
+                    concatenated_dists.append(np.mean(relevant_dists))
+                    concatenated_res.append(resolution)
+                else:
+                    concatenated_dists.extend(relevant_dists)
+                    concatenated_res.extend([resolution for _ in relevant_dists])
+    # print(len(concatenated_dists), concatenated_dists)
+    # print(len(concatenated_res), concatenated_res)
+    concatenated_dists = np.asarray(concatenated_dists)
+    print(np.sum(concatenated_dists > 9), len(concatenated_dists))
+    scatter(concatenated_res, concatenated_dists, fit=True)
+    plt.xlabel(r'Resolution (\AA{})')
+    plt.ylabel(r'Distance (\AA{})')
+    # plt.legend(loc='lower left')
+    plt.savefig(f'../fig_paper/python/resolution{"_num" if num_setting else ""}{"_dockim" if dockim else ""}.pdf')
+    plt.show()
 
 
 def get_angles_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10):
@@ -177,14 +268,19 @@ def get_angles_one(test_path=None, dockim=False, nano=False, num_setting=False, 
         pickle_name_to_get = f'angledist{suffix}{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p'
     outname_results = os.path.join(test_path, pickle_name_to_get)
     results = pickle.load(open(outname_results, 'rb'))
-    sel_angles = list()
+    sel_angles_p = list()
+    sel_angles_theta = list()
     for pdb, pdb_res in results.items():
         if pdb_res is None:
             continue
-        dists, angles = pdb_res
+        dists, angles_p, angles_theta = pdb_res
         selector = dists < thresh
-        sel_angles.extend(list(np.asarray(angles)[selector]))
-    return sel_angles
+        sel_angles_p.extend(list(np.asarray(angles_p)[selector]))
+        sel_angles_theta.extend(list(np.asarray(angles_theta)[selector]))
+    print(f"For main angle: {np.mean(sel_angles_p):.2f} +/- {np.std(sel_angles_p):.2f}")
+    print(f"For theta angle: {np.mean(sel_angles_theta):.2f} +/- {np.std(sel_angles_theta):.2f}")
+    print()
+    return sel_angles_p
 
 
 def plot_dict_hist(angle_resdict):
@@ -281,7 +377,12 @@ def plot_ablation():
 
 if __name__ == '__main__':
     pass
-    # get_angledist_results()
     # get_distances_all()
-    plot_all()
+
+    # resolution_plot(dockim=True, num_setting=True)
+    # resolution_plot(dockim=False, num_setting=True)
+    # resolution_plot(dockim=False, num_setting=False)
+
+    # get_angledist_results()
+    # plot_all()
     # plot_ablation()
