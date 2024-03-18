@@ -139,7 +139,8 @@ def save_structure(structure, outname):
     else:
         io = MMCIFIO()
     io.set_structure(structure)
-    io.save(outname)
+    with open(outname, 'w') as outname_handle:
+        io.save(outname_handle)
 
 
 # rotation/translation to pdbs
