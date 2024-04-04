@@ -1,5 +1,5 @@
 <BundleInfo name="ChimeraX-crai"
-	    version="0.1" package="crai"
+	    version="0.2" package="crai"
   	    minSessionVersion="1" maxSessionVersion="1">
 
   <!-- Additional information about bundle source -->

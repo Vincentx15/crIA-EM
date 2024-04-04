@@ -103,11 +103,11 @@ def predict_coords(session, mrc, outname=None, outmrc=None, n_objects=None, thre
     return outnames
 
 
-def crai(session, map_path, outname=None, use_pd=True, n_objects=None, split_pred=True, fit_in_map=True):
+def crai(session, density, outName=None, usePD=True, nObjects=None, splitPred=True, fitMap=True):
     """
 
     :param session:
-    :param map_path:
+    :param densityMap:
     :param outname:
     :param test_arg:
     :return:
@@ -115,26 +115,26 @@ def crai(session, map_path, outname=None, use_pd=True, n_objects=None, split_pre
 
     t0 = time.time()
     print('Loading data')
-    map_id, mrc = get_mrc_from_input(map_path=map_path, session=session)
+    map_id, mrc = get_mrc_from_input(map_path=density, session=session)
     mrc = clean_mrc(mrc)
     print(map_id)
     print('Data loaded in : ', time.time() - t0)
 
-    outname = get_outname(outname=outname, map_path=map_path, session=session)
+    outname = get_outname(outname=outName, map_path=density, session=session)
     if outname is None or mrc is None:
         return None
-    outnames = predict_coords(mrc=mrc, outname=outname, use_pd=use_pd, n_objects=n_objects, session=session,
-                              split_pred=split_pred)
+    outnames = predict_coords(mrc=mrc, outname=outname, use_pd=usePD, n_objects=nObjects, session=session,
+                              split_pred=splitPred)
     for outname in outnames:
         ab = run(session, f"open {outname}")
-        if fit_in_map:
+        if fitMap:
             run(session, f"fit #{ab[0].id_string} inmap #{map_id}")
 
 
-crai_desc = CmdDesc(required=[("map_path", StringArg)],
-                    optional=[("outname", StringArg),
-                              ("use_pd", BoolArg),
-                              ("n_objects", IntArg),
-                              ("split_pred", BoolArg),
-                              ("fit_in_map", BoolArg),
+crai_desc = CmdDesc(required=[("density", StringArg)],
+                    optional=[("outName", StringArg),
+                              ("usePD", BoolArg),
+                              ("nObjects", IntArg),
+                              ("splitPred", BoolArg),
+                              ("fitMap", BoolArg),
                               ], )
