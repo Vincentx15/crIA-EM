@@ -13,12 +13,12 @@
 <h3><a href="../index.html#commands">Command</a>: crai</h3>
 <h3 class="usage"><a href="usageconventions.html">Usage</a>:
     <br><b>crai</b>
-  &nbsp;(<i><a href="../commands/atomspec.html#hierarchy">model-spec</a>) | filepath </i>
-  &nbsp;[outName]
-  &nbsp;[nObjects]
-  &nbsp;[usePd]
-  &nbsp;[splitPred]
-  &nbsp;[fitMap]
+  &nbsp;(<i><a href="../commands/atomspec.html#hierarchy">model-spec</a> | filepath) </i>
+  &nbsp;[<b>outName</b> <i>outfilepath</i>]
+  &nbsp;[<b>nObjects</b> <i>a specified number</i>]
+  &nbsp;[<b>usePd</b> <i>True</i>]
+  &nbsp;[<b>splitPred</b> <i>True</i>]
+  &nbsp;[<b>fitMap</b> <i>True</i>]
 </h3>
 
 <b>crai</b> is a tool that lets you find antibodies in a cryo-EM map, provided either as the path to the cryo-EM map or
@@ -28,23 +28,26 @@ as the volume identifier.
 <h3>Options</h3>
 <blockquote>
 <b>outName</b>
-&nbsp;Name of the output file
+&nbsp;:&nbsp;Name of the output file. If none is provided, will either use the name of the input file with a suffix or "crai_pred"
 </blockquote>
 <blockquote>
 <b>nObjects</b>
-&nbsp;<i>None</i>&nbsp;Expected count of antibodies in the density (exactly that many will we output)
+&nbsp;<i>None</i>&nbsp;:&nbsp;If left to None, the number of predictions is infered automatically.
+    Otherwise, it should represent the expected count of antibodies in the density (exactly that many will we output)
 </blockquote>
 <blockquote>
 <b>usePD</b>
-&nbsp;<i><b>True</b>|False</i>&nbsp;Whether to use persistence diagrams
+&nbsp;<i><b>True</b>|False</i>&nbsp;:&nbsp;Whether to use persistence diagrams. They were shown to marginally affect performance
 </blockquote>
 <blockquote>
 <b>splitPred</b>
-&nbsp;<i><b>True</b>|False</i>&nbsp;Whether to use split output in several pdbs, one for each Ab.
+&nbsp;<i><b>True</b>|False</i>&nbsp;:&nbsp;Whether to use split output in several pdbs, one for each Ab.
 </blockquote>
 <blockquote>
 <b>fitMap</b>
-&nbsp;<i><b>True</b>|False</i>&nbsp;Whether to run <a href="../commands/fitmap.html">fitMap</a> on each prediction for a local enhancement.
+&nbsp;<i><b>True</b>|False</i>&nbsp;:&nbsp;Whether to run <a href="../commands/fitmap.html">fitMap</a> on each prediction for a local enhancement.
+    <b>Caution !</b> This sometimes completely breaks the performance of the prediction.
+    If this is the case, and you would still like to use fitMap, try running it yourself with custom parameters
 </blockquote>
 
 <a name="Description"/>

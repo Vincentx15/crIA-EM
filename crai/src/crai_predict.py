@@ -1,6 +1,8 @@
 from chimerax.core.commands import CmdDesc
 from chimerax.core.commands import StringArg, IntArg, BoolArg
+from chimerax.core.commands import OpenFileNameArg, SaveFileNameArg, Or
 from chimerax.core.commands import run
+from chimerax.map import MapArg
 from chimerax.map.volume import Volume
 
 import os
@@ -20,28 +22,31 @@ from SimpleUnet import SimpleHalfUnetModel
 from utils_object_detection import output_to_transforms, transforms_to_pdb_biopython
 
 
-def get_mrc_from_input(session, map_path):
-    # If it's a path, open it in Chimerax and get its id.
-    if not map_path.startswith("#"):
-        output_run = run(session, f"open {map_path}")
-        map_id = output_run[0].id_string
-    else:
-        map_id = map_path[1:]
-
+def get_volume_from_path(session, map_path):
+    output_run = run(session, f"open {map_path}")
+    map_id = output_run[0].id_string
     # #1.1 =>(1,1) which is what's keyed by session._models.
     as_tuple = tuple([int(x) for x in map_id.split('.')])
-    if not as_tuple in session.models._models:
-        raise ValueError(f"Could not find queried model {map_path}")
     queried = session.models._models[as_tuple]
     if not isinstance(queried, Volume):
-        raise ValueError(f"Expected the id to refer to map data, got {queried}")
-    # Chimerax also has this transposition
-    queried_data = queried.full_matrix().transpose((2, 1, 0))
+        raise ValueError(f"Expected the path to refer to map data, got {queried}")
+    return queried
+
+
+def get_mrc_from_input(session, path_or_volume):
+    # If it's a path, open it in Chimerax and get its id.
+    if not isinstance(path_or_volume, Volume):
+        if not isinstance(path_or_volume, str):
+            raise ValueError(f"Expected the path to be either a volume or a path, got {path_or_volume}")
+        volume = get_volume_from_path(session, path_or_volume)
+    else:
+        volume = path_or_volume
+    queried_data = volume.full_matrix().transpose((2, 1, 0))
     mrc = utils_mrc.MRCGrid(data=queried_data,
-                            voxel_size=queried.data.step,
-                            origin=queried.data.origin,
+                            voxel_size=volume.data.step,
+                            origin=volume.data.origin,
                             )
-    return map_id, mrc
+    return volume.id_string, mrc
 
 
 def clean_mrc(mrc, resample=True, crop=0, normalize='max'):
@@ -68,7 +73,7 @@ def get_outname(session, map_path, outname=None):
             outname += '.pdb'
         return outname
 
-    if map_path.startswith("#"):
+    if isinstance(map_path, Volume):
         default_outname = "crai_prediction.pdb"
     else:
         default_outname = map_path.replace(".mrc", "_predicted.pdb").replace(".map", "_predicted.pdb")
@@ -82,24 +87,18 @@ def get_outname(session, map_path, outname=None):
 def predict_coords(session, mrc, outname=None, outmrc=None, n_objects=None, thresh=0.2, default_nano=False,
                    use_pd=True, split_pred=True):
     mrc_grid = torch.from_numpy(mrc.data[None, None, ...])
-    print('Loading model...')
     model_path = os.path.join(script_dir, "data/ns_final_last.pth")
     model = SimpleHalfUnetModel(classif_nano=True, num_feature_map=32)
     model.load_state_dict(torch.load(model_path))
-    print('Loaded model')
 
-    print('Predicting...')
     t0 = time.time()
     with torch.no_grad():
         out = model(mrc_grid)[0].numpy()
-    print(f'Done prediction in : {time.time() - t0:.2f}s', out.shape)
-    print('Prediction shape', out.shape)
-
-    print('Post-processing...')
+    print(f'Done prediction in : {time.time() - t0:.2f}s')
     transforms = output_to_transforms(out, mrc, n_objects=n_objects, thresh=thresh, outmrc=outmrc,
                                       classif_nano=True, default_nano=default_nano, use_pd=use_pd)
     outnames = transforms_to_pdb_biopython(transforms=transforms, outname=outname, split_pred=split_pred)
-    print('Done ! Output saved in ', outnames[0])
+    print('Output saved in ', outnames[0])
     return outnames
 
 
@@ -114,11 +113,9 @@ def crai(session, density, outName=None, usePD=True, nObjects=None, splitPred=Tr
     """
 
     t0 = time.time()
-    print('Loading data')
-    map_id, mrc = get_mrc_from_input(map_path=density, session=session)
+    map_id, mrc = get_mrc_from_input(path_or_volume=density, session=session)
     mrc = clean_mrc(mrc)
-    print(map_id)
-    print('Data loaded in : ', time.time() - t0)
+    print(f'Data loaded in : {time.time() - t0:.2f}s')
 
     outname = get_outname(outname=outName, map_path=density, session=session)
     if outname is None or mrc is None:
@@ -131,10 +128,10 @@ def crai(session, density, outName=None, usePD=True, nObjects=None, splitPred=Tr
             run(session, f"fit #{ab[0].id_string} inmap #{map_id}")
 
 
-crai_desc = CmdDesc(required=[("density", StringArg)],
-                    optional=[("outName", StringArg),
-                              ("usePD", BoolArg),
-                              ("nObjects", IntArg),
-                              ("splitPred", BoolArg),
-                              ("fitMap", BoolArg),
-                              ], )
+crai_desc = CmdDesc(required=[("density", Or(MapArg, OpenFileNameArg))],
+                    keyword=[("outName", SaveFileNameArg),
+                             ("usePD", BoolArg),
+                             ("nObjects", IntArg),
+                             ("splitPred", BoolArg),
+                             ("fitMap", BoolArg),
+                             ], )

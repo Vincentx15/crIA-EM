@@ -57,9 +57,7 @@ def nms(pred_loc, n_objects=None, thresh=0.2, use_pd=False):
         if n_objects is None:
             n_objects = np.sum(lifetimes > thresh)
         ijk_s = np.int_(sorted_pd[:n_objects, 3:6])
-        first_ijk_s = np.int_(sorted_pd[:3, 3:6])
-        values = [pred_loc[i, j, k] for i, j, k in first_ijk_s]
-        print("Values : ", values)
+        # first_ijk_s = np.int_(sorted_pd[:3, 3:6])
     else:
         pred_array = pred_loc.copy()
         ijk_s = []
@@ -75,6 +73,8 @@ def nms(pred_loc, n_objects=None, thresh=0.2, use_pd=False):
                 i, j, k = predict_one_ijk(pred_array)
                 ijk_s.append((i, j, k))
         ijk_s = np.int_(np.asarray(ijk_s))
+    values = [pred_loc[i, j, k] for i, j, k in ijk_s]
+    print("Sorted probability values : ", values)
     return ijk_s
 
 
@@ -148,7 +148,7 @@ def transforms_to_pdb_biopython(transforms, outname, split_pred=True):
     """
     Take our template and apply the learnt rotation to it.
     """
-    parser = PDBParser()
+    parser = PDBParser(QUIET=True)
     structure_fv = parser.get_structure("fv", REF_PATH_FV)
     structure_nano = parser.get_structure("nano", REF_PATH_NANO)
 
