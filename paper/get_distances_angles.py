@@ -199,7 +199,7 @@ def get_distances_all():
     return res_dict
 
 
-def scatter(proba, distances, alpha=0.3, noise_strength=0.02, fit=True):
+def scatter(proba, distances, alpha=0.3, noise_strength=0.02, fit=True, display_fit=True, colors=None, label=None):
     # Adding random noise to the data
 
     proba += noise_strength * np.random.randn(len(proba))
@@ -212,22 +212,24 @@ def scatter(proba, distances, alpha=0.3, noise_strength=0.02, fit=True):
     plt.rc('grid', color='grey', alpha=0.2)
     plt.grid(True)
     # Plotting the scatter data with transparency
-    sns_colors = sns.color_palette('colorblind', as_cmap=True)
-    plt.scatter(proba, distances, color=sns_colors[0], marker='o', alpha=alpha)
+    if colors is None:
+        colors = sns.color_palette('colorblind', as_cmap=True)
+    plt.scatter(proba, distances, color=colors[0], marker='o', alpha=alpha)
 
     if fit:
         # Linear fit
         m, b = np.polyfit(proba, distances, 1)
         x = np.linspace(proba.min(), proba.max())
-        plt.plot(x, m * x + b, color=sns_colors[1])
+        plt.plot(x, m * x + b, color=colors[1],label=label)
         # plt.plot(all_probas_bench, m * all_probas_bench + b, color='red', label=f'Linear Fit: y={m:.2f}x+{b:.2f}')
 
-        # Calculating R^2 score
-        predicted = m * proba + b
-        from sklearn.metrics import r2_score
-        r2 = r2_score(distances, predicted)
-        plt.text(0.68, 0.86, rf'$y = {m:.2f} x + {b:.2f}$', transform=plt.gca().transAxes)
-        plt.text(0.66, 0.8, rf'$R^2 = {r2:.2f}$', transform=plt.gca().transAxes)
+        if display_fit:
+            # Calculating R^2 score
+            predicted = m * proba + b
+            from sklearn.metrics import r2_score
+            r2 = r2_score(distances, predicted)
+            plt.text(0.68, 0.86, rf'$y = {m:.2f} x + {b:.2f}$', transform=plt.gca().transAxes)
+            plt.text(0.66, 0.8, rf'$R^2 = {r2:.2f}$', transform=plt.gca().transAxes)
 
 
 def resolution_plot(sys=False, num_setting=False, dockim=False):
@@ -258,6 +260,27 @@ def resolution_plot(sys=False, num_setting=False, dockim=False):
     plt.ylabel(r'Distance (\AA{})')
     # plt.legend(loc='lower left')
     plt.savefig(f'../fig_paper/python/resolution{"_num" if num_setting else ""}{"_dockim" if dockim else ""}.pdf')
+    plt.show()
+    return concatenated_res, concatenated_dists
+
+
+def resolution_plot_both():
+    # res_dockim, dists_dockim = resolution_plot(dockim=True, num_setting=True)
+    # res_num, dists_num = resolution_plot(dockim=False, num_setting=True)
+    # res_thresh, dists_thresh = resolution_plot(dockim=False, num_setting=False)
+    #
+    # pickle.dump((res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh), open('temp.p', 'wb'))
+    res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh = pickle.load(open('temp.p', 'rb'))
+    colors = sns.color_palette('Paired', n_colors=6)
+
+    scatter(res_dockim, dists_dockim, colors=['red'] * 2, display_fit=False, label=r'\texttt{dock in map}')
+    # scatter(res_num, dists_num, colors=colors[2:], display_fit=False)
+    scatter(res_thresh, dists_thresh, colors=['darkviolet'] * 2, display_fit=False, label=r'\texttt{CrAI}')
+
+    plt.xlabel(r'Resolution (\AA{})')
+    plt.ylabel(r'Distance (\AA{})')
+    plt.legend(loc='center right')
+    plt.savefig(f'../fig_paper/python/resolution_both.pdf')
     plt.show()
 
 
@@ -382,6 +405,7 @@ if __name__ == '__main__':
     # resolution_plot(dockim=True, num_setting=True)
     # resolution_plot(dockim=False, num_setting=True)
     # resolution_plot(dockim=False, num_setting=False)
+    resolution_plot_both()
 
     # get_angledist_results()
     # plot_all()
