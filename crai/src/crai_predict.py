@@ -111,7 +111,8 @@ def crai(session, density, outName=None, usePD=True, nObjects=None, splitPred=Tr
     :param test_arg:
     :return:
     """
-
+    # print("Torch version used: ", torch.__version__)
+    # print("Torch path used: ", os.path.abspath(torch.__file__))
     t0 = time.time()
     map_id, mrc = get_mrc_from_input(path_or_volume=density, session=session)
     mrc = clean_mrc(mrc)
