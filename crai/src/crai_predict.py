@@ -1,5 +1,5 @@
 from chimerax.core.commands import CmdDesc
-from chimerax.core.commands import StringArg, IntArg, BoolArg
+from chimerax.core.commands import FloatArg, StringArg, IntArg, BoolArg
 from chimerax.core.commands import OpenFileNameArg, SaveFileNameArg, Or
 from chimerax.core.commands import run
 from chimerax.map import MapArg
@@ -49,10 +49,10 @@ def get_mrc_from_input(session, path_or_volume):
     return volume.id_string, mrc
 
 
-def clean_mrc(mrc, resample=True, crop=0, normalize='max'):
+def clean_mrc(mrc, resample=True, crop=0, normalize='max', min_val=None):
     if resample:
         mrc = mrc.resample()
-    mrc = mrc.normalize(normalize_mode=normalize)
+    mrc = mrc.normalize(normalize_mode=normalize, min_val=min_val)
     if crop != 0:
         mrc = mrc.crop(*(crop,) * 6)
     else:
@@ -102,7 +102,7 @@ def predict_coords(session, mrc, outname=None, outmrc=None, n_objects=None, thre
     return outnames
 
 
-def crai(session, density, outName=None, usePD=True, nObjects=None, splitPred=True, fitMap=True):
+def crai(session, density, outName=None, usePD=True, nObjects=None, splitPred=True, fitMap=True, minVal=None):
     """
 
     :param session:
@@ -115,7 +115,7 @@ def crai(session, density, outName=None, usePD=True, nObjects=None, splitPred=Tr
     # print("Torch path used: ", os.path.abspath(torch.__file__))
     t0 = time.time()
     map_id, mrc = get_mrc_from_input(path_or_volume=density, session=session)
-    mrc = clean_mrc(mrc)
+    mrc = clean_mrc(mrc, min_val=minVal)
     print(f'Data loaded in : {time.time() - t0:.2f}s')
 
     outname = get_outname(outname=outName, map_path=density, session=session)
@@ -135,4 +135,5 @@ crai_desc = CmdDesc(required=[("density", Or(MapArg, OpenFileNameArg))],
                              ("nObjects", IntArg),
                              ("splitPred", BoolArg),
                              ("fitMap", BoolArg),
+                             ("minVal", FloatArg),
                              ], )

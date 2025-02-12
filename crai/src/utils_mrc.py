@@ -88,12 +88,16 @@ class MRCGrid:
             os.remove(uncompressed_name)
         return MRCGrid(data=data, voxel_size=voxel_size, origin=origin, normalize_mode=normalize)
 
-    def normalize(self, normalize_mode='max'):
+    def normalize(self, normalize_mode='max', min_val=None):
         """
         :return:
         """
         if normalize_mode is None:
             return self
+
+        # Shift the data by min_val before relu-ing it
+        if min_val is not None:
+            self.data -= float(min_val)
 
         relued = np.maximum(self.data, np.zeros_like(self.data))
         flat = relued.flatten()
@@ -182,6 +186,9 @@ class MRCGrid:
         return cropped_mrc
 
     def crop_large_mrc(self, margin=12):
+        """
+        Take data above 10% of the min and cut everything above it
+        """
         arr = self.data
         to_find = arr > 0.1
         res = np.nonzero(to_find)

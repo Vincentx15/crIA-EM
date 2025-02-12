@@ -19,6 +19,7 @@
   &nbsp;[<b>usePd</b> <i>True</i>]
   &nbsp;[<b>splitPred</b> <i>True</i>]
   &nbsp;[<b>fitMap</b> <i>True</i>]
+  &nbsp;[<b>minVal</b> <i>0.</i>]
 </h3>
 
 <b>crai</b> is a tool that lets you find antibodies in a cryo-EM map, provided either as the path to the cryo-EM map or
@@ -49,6 +50,12 @@ as the volume identifier.
     <b>Caution !</b> This sometimes completely breaks the performance of the prediction.
     If this is the case, and you would still like to use fitMap, try running it yourself with custom parameters
 </blockquote>
+<blockquote>
+<b>minVal</b>
+&nbsp;<i><b>0.</b></i>&nbsp;:&nbsp; By default, only values above zero are kept. By adjusting this parameter, you can additionally discard all values smaller than minVal.
+    This can be particularly useful to discard large margins with values very close to zero (making prediction faster) as well as periodic artefacts that occur in some map and confuse the model.
+</blockquote>
+
 
 <a name="Description"/>
 <h3>Description</h3>

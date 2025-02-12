@@ -2,7 +2,6 @@ import os
 import sys
 
 from collections import defaultdict
-import glob
 import numpy as np
 import pandas as pd
 import pickle
@@ -10,7 +9,6 @@ import pymol2
 import scipy
 from scipy.spatial.transform import Rotation
 import shutil
-import subprocess
 import time
 import torch
 
@@ -327,7 +325,7 @@ def compute_ablations():
 if __name__ == '__main__':
     pass
     # TODO : understand why n<10 sometimes
-    # mwe()
+    mwe()
 
     # To do one
     # sorted_split = True
@@ -339,7 +337,7 @@ if __name__ == '__main__':
     # get_hit_rates(nano=True, test_path='../data/testset')
 
     # GET DATA
-    # compute_all()
+    compute_all()
 
     # GET ABLATIONS
-    # compute_ablations()
+    compute_ablations()
