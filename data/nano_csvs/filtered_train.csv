@@ -1,0 +1,455 @@
+,pdb,Hchain,Lchain,antigen_chain,resolution,date,mrc,antibody_selection,antigen_selection
+0,7y58,B,,A,3.8,07/12/23,33612,chain B,chain A
+1,7y58,C,,A,3.8,07/12/23,33612,chain C,chain A
+3,7ydp,D,,A | B,3.1,07/12/23,33755,chain D,chain A or chain B
+4,7y35,N,,A | B,2.9,07/05/23,33588,chain N,chain A or chain B
+5,7y36,N,,A | B,2.8,07/05/23,33590,chain N,chain A or chain B
+6,7yc5,D,,A,3.1,07/05/23,33734,chain D,chain A
+7,7yc5,E,,B,3.1,07/05/23,33734,chain E,chain B
+8,7yc5,F,,C,3.1,07/05/23,33734,chain F,chain C
+9,7yc5,G,,C,3.1,07/05/23,33734,chain G,chain C
+10,7yc5,H,,A,3.1,07/05/23,33734,chain H,chain A
+11,7yc5,I,,B,3.1,07/05/23,33734,chain I,chain B
+12,7ym8,D,,A,2.92,07/05/23,33924,chain D,chain A
+13,7ymh,D,,A,3.52,07/05/23,33928,chain D,chain A
+15,8dt8,H,,A,3.34,06/14/23,27692,chain H,chain A
+16,8dt8,D,,A | B,3.34,06/14/23,27692,chain D,chain A or chain B
+17,8jlz,N,,A | B,3.09,06/28/23,36409,chain N,chain A or chain B
+18,8h4i,D,,A | B,3.06,06/21/23,34478,chain D,chain A or chain B
+19,8h4k,N,,A | B,3.1,06/21/23,34479,chain N,chain A or chain B
+22,8hbw,B,,A,2.57,06/21/23,34645,chain B,chain A
+23,8hmp,N,,A | B,2.77,06/21/23,34902,chain N,chain A or chain B
+24,8irr,N,,A | B,3.2,06/21/23,35683,chain N,chain A or chain B
+25,8j1n,B,,A,2.51,06/21/23,35928,chain B,chain A
+26,8gw8,N,,A | B,2.9,06/14/23,34305,chain N,chain A or chain B
+30,8g2y,N,,A | B,3.44,05/10/23,29684,chain N,chain A or chain B
+31,8flq,N,,A | G | B,2.55,04/26/23,29283,chain N,chain A or chain G or chain B
+32,8flr,N,,A | G | B,2.94,04/26/23,29284,chain N,chain A or chain G or chain B
+33,8fls,N,,A | B,3.09,04/26/23,29285,chain N,chain A or chain B
+34,8flt,N,,A | B,3.03,04/26/23,29286,chain N,chain A or chain B
+36,8sbb,B,,A,3.59,04/26/23,40303,chain B,chain A
+37,8fu6,N,,A | B,2.9,04/12/23,29453,chain N,chain A or chain B
+38,8ont,B,,A,3.66,04/12/23,17000,chain B,chain A
+39,8i2g,N,,A | G | B,2.8,03/29/23,35135,chain N,chain A or chain G or chain B
+41,7yah,C,,A,3.12,03/22/23,33712,chain C,chain A
+43,7yaj,C,,A,3.16,03/22/23,33714,chain C,chain A
+44,8bzy,B,,A,3.24,03/22/23,16345,chain B,chain A
+45,8c02,B,,A,4.09,03/22/23,16353,chain B,chain A
+46,8f76,N,,X | Y | Z,3.1,03/22/23,28896,chain N,chain X or chain Y or chain Z
+47,8eqb,A,,C | B,6.5,03/15/23,28536,chain A,chain C or chain B
+48,8eqb,D,,F | E,6.5,03/15/23,28536,chain D,chain F or chain E
+49,8eqb,G,,I | H,6.5,03/15/23,28536,chain G,chain I or chain H
+50,8eqb,J,,L | K,6.5,03/15/23,28536,chain J,chain L or chain K
+52,8hix,N,,A | B,3.12,03/15/23,33480,chain N,chain A or chain B
+53,8hj0,N,,A | B,3.12,03/15/23,33482,chain N,chain A or chain B
+55,7ru6,L,,A,4.4,08/24/22,24698,chain L,chain A
+56,7rug,L,,A,4.7,08/24/22,24705,chain L,chain A
+57,7ph4,C,,B,2.8,08/24/22,13406,chain C,chain B
+58,7ph4,D,,A,2.8,08/24/22,13406,chain D,chain A
+63,7tmw,N,,R | B,3.2,02/15/23,26003,chain N,chain R or chain B
+67,8gni,C,,A,3.74,01/18/23,34165,chain C,chain A
+68,8gnj,C,,A,3.78,01/18/23,34166,chain C,chain A
+69,8gq5,a,,A,2.7,01/18/23,34198,chain a,chain A
+70,8gq5,b,,B,2.7,01/18/23,34198,chain b,chain B
+71,8gq5,c,,C,2.7,01/18/23,34198,chain c,chain C
+72,8gq5,d,,D,2.7,01/18/23,34198,chain d,chain D
+73,8gq5,e,,E,2.7,01/18/23,34198,chain e,chain E
+74,8gq5,f,,F,2.7,01/18/23,34198,chain f,chain F
+75,8gq5,g,,G,2.7,01/18/23,34198,chain g,chain G
+76,8gq5,h,,H,2.7,01/18/23,34198,chain h,chain H
+77,8gq5,i,,I,2.7,01/18/23,34198,chain i,chain I
+78,8gq5,j,,J,2.7,01/18/23,34198,chain j,chain J
+79,8gq5,k,,K,2.7,01/18/23,34198,chain k,chain K
+80,8gq5,l,,L,2.7,01/18/23,34198,chain l,chain L
+81,8gq5,m,,M,2.7,01/18/23,34198,chain m,chain M
+82,8gq5,n,,N,2.7,01/18/23,34198,chain n,chain N
+83,8gq5,o,,O,2.7,01/18/23,34198,chain o,chain O
+84,8gq5,p,,P,2.7,01/18/23,34198,chain p,chain P
+86,8hdp,N,,A | B,3.2,01/18/23,34677,chain N,chain A or chain B
+87,8hao,F,,C | D,3.76,12/21/22,34598,chain F,chain C or chain D
+88,8hao,N,,A | B,3.76,12/21/22,34598,chain N,chain A or chain B
+91,7wcn,N,,A | B,2.87,12/21/22,32425,chain N,chain A or chain B
+93,8ha0,N,,A | B,2.62,12/21/22,34585,chain N,chain A or chain B
+94,8haf,N,,A | B,3.25,12/21/22,34587,chain N,chain A or chain B
+95,8b41,G,,A,3.8,12/14/22,15836,chain G,chain A
+96,8b41,H,,B,3.8,12/14/22,15836,chain H,chain B
+97,8b41,I,,C,3.8,12/14/22,15836,chain I,chain C
+98,8b41,J,,D,3.8,12/14/22,15836,chain J,chain D
+99,8e99,E,,B,4.24,12/07/22,27961,chain E,chain B
+100,8e3x,N,,A | B | G,2.3,11/23/22,27872,chain N,chain A or chain B or chain G
+101,8e3y,N,,A | B,2.3,11/23/22,27873,chain N,chain A or chain B
+103,7zw1,C,,B,3.7,11/16/22,14991,chain C,chain B
+104,7wy5,N,,A | B,2.83,10/26/22,32884,chain N,chain A or chain B
+105,7wy8,D,,A | B,2.83,10/26/22,32887,chain D,chain A or chain B
+106,7xp4,N,,A | B,3.01,10/12/22,33364,chain N,chain A or chain B
+107,7xp5,N,,A | B,3.08,10/12/22,33365,chain N,chain A or chain B
+108,7xp6,N,,A | B,3.01,10/12/22,33366,chain N,chain A or chain B
+109,7xrp,B,,F | A,3.88,10/05/22,33416,chain B,chain F or chain A
+110,7yzi,C,,B,3.83,10/05/22,14388,chain C,chain B
+111,7yzi,D,,A,3.83,10/05/22,14388,chain D,chain A
+112,7yzi,E,,B,3.83,10/05/22,14388,chain E,chain B
+114,7wxw,D,,A | B,2.84,09/28/22,32882,chain D,chain A or chain B
+115,7y9t,D,,B,3.1,09/07/22,33691,chain D,chain B
+116,7y9t,C,,A,3.1,09/07/22,33691,chain C,chain A
+117,7y9u,C,,A,3.3,09/07/22,33692,chain C,chain A
+118,7y9u,D,,B,3.3,09/07/22,33692,chain D,chain B
+119,7y9v,C,,A,3.2,09/07/22,33693,chain C,chain A
+120,7y9v,D,,B,3.2,09/07/22,33693,chain D,chain B
+121,7xw5,N,,A | B,2.96,08/24/22,33491,chain N,chain A or chain B
+122,7ph7,C,,B,4.1,08/24/22,13409,chain C,chain B
+123,7ph7,D,,A,4.1,08/24/22,13409,chain D,chain A
+127,7xz5,N,,A | B | G,3.1,08/24/22,33525,chain N,chain A or chain B or chain G
+128,8dlz,H,,C,2.57,01/08/09,27521,chain H,chain C
+131,7xz6,N,,A | G | B,2.8,08/24/22,33526,chain N,chain A or chain G or chain B
+132,7yp7,N,,A | B,3.1,08/24/22,33995,chain N,chain A or chain B
+133,7yzk,C,,B,3.57,08/31/22,14389,chain C,chain B
+134,7yzk,D,,A,3.57,08/31/22,14389,chain D,chain A
+135,8di5,H,,C,3.04,08/24/22,27439,chain H,chain C
+136,8dly,H,,C,3.0,08/31/22,27520,chain H,chain C
+137,8dm0,H,,C,3.21,08/31/22,27522,chain H,chain C
+141,7t9i,N,,X | Y,2.9,08/03/22,25758,chain N,chain X or chain Y
+143,7vvj,N,,A | B,3.2,08/03/22,32141,chain N,chain A or chain B
+144,7vvk,N,,A | B,3.3,08/03/22,32142,chain N,chain A or chain B
+147,7vvn,N,,A | B,3.8,08/03/22,32145,chain N,chain A or chain B
+148,7vvo,N,,A | B,4.1,08/03/22,32146,chain N,chain A or chain B
+149,8dfl,E,,A,3.25,07/13/22,25417,chain E,chain A
+150,8dfl,F,,B,3.25,07/13/22,25417,chain F,chain B
+151,8dfl,G,,C,3.25,07/13/22,25417,chain G,chain C
+152,8dfl,H,,D,3.25,07/13/22,25417,chain H,chain D
+153,7xt8,N,,A | B,3.1,07/27/22,33442,chain N,chain A or chain B
+154,7xtb,N,,A | B,3.3,07/27/22,33445,chain N,chain A or chain B
+155,7xtc,N,,A | B | G,3.2,07/27/22,33446,chain N,chain A or chain B or chain G
+156,7qe5,B,,A,4.7,07/27/22,13930,chain B,chain A
+157,8dcr,N,,A | B,2.6,07/27/22,27328,chain N,chain A or chain B
+158,8dcs,N,,A | B,2.5,07/27/22,27329,chain N,chain A or chain B
+159,7vq0,D,,A,3.03,07/20/22,32078,chain D,chain A
+160,7vq0,E,,B,3.03,07/20/22,32078,chain E,chain B
+161,7vq0,F,,C,3.03,07/20/22,32078,chain F,chain C
+162,7xou,N,,A | B,3.2,07/20/22,33359,chain N,chain A or chain B
+163,7xov,N,,A | B,3.0,07/20/22,33360,chain N,chain A or chain B
+164,7z6v,X,,A,3.1,07/13/22,14531,chain X,chain A
+165,7z6v,Y,,B,3.1,07/13/22,14531,chain Y,chain B
+166,7z6v,Z,,C,3.1,07/13/22,14531,chain Z,chain C
+167,7z7x,F,,C,3.3,07/13/22,14539,chain F,chain C
+168,7z7x,D,,A,3.3,07/13/22,14539,chain D,chain A
+169,7z7x,E,,B,3.3,07/13/22,14539,chain E,chain B
+173,7z86,X,,A,3.4,07/13/22,14544,chain X,chain A
+174,7z86,Y,,B,3.4,07/13/22,14544,chain Y,chain B
+175,7z86,Z,,C,3.4,07/13/22,14544,chain Z,chain C
+176,7z9q,D,,C,3.6,07/13/22,14575,chain D,chain C
+177,7z9q,E,,A,3.6,07/13/22,14575,chain E,chain A
+178,7z9q,F,,B,3.6,07/13/22,14575,chain F,chain B
+179,7z9r,Y,,B,4.2,07/13/22,14576,chain Y,chain B
+180,7z9r,X,,A,4.2,07/13/22,14576,chain X,chain A
+181,7z9r,Z,,C,4.2,07/13/22,14576,chain Z,chain C
+182,8cyd,D,,B,2.6,07/06/22,27075,chain D,chain B
+183,8cyd,E,,C,2.6,07/06/22,27075,chain E,chain C
+184,8cyd,F,,A,2.6,07/06/22,27075,chain F,chain A
+185,8cyj,A,,R,3.6,07/06/22,27080,chain A,chain R
+186,8cyj,B,,R,3.6,07/06/22,27080,chain B,chain R
+187,8cyj,C,,R,3.6,07/06/22,27080,chain C,chain R
+188,8cyj,D,,R,3.6,07/06/22,27080,chain D,chain R
+189,7xtq,N,,A | B | G,3.2,07/06/22,33452,chain N,chain A or chain B or chain G
+193,8cya,D,,C,2.7,07/06/22,27072,chain D,chain C
+194,8cya,E,,A,2.7,07/06/22,27072,chain E,chain A
+195,8cya,F,,B,2.7,07/06/22,27072,chain F,chain B
+197,8cyc,D,,A,2.9,07/06/22,27074,chain D,chain A
+198,8cyc,E,,B,2.9,07/06/22,27074,chain E,chain B
+199,8cyc,F,,C,2.9,07/06/22,27074,chain F,chain C
+200,8cy6,D,,A,3.2,07/06/22,27068,chain D,chain A
+201,8cy6,E,,B,3.2,07/06/22,27068,chain E,chain B
+202,8cy6,F,,C,3.2,07/06/22,27068,chain F,chain C
+203,8cy7,D,,A,2.9,07/06/22,27069,chain D,chain A
+204,8cy7,E,,B,2.9,07/06/22,27069,chain E,chain B
+205,8cy7,F,,C,2.9,07/06/22,27069,chain F,chain C
+212,7ssz,E,,A,3.25,11/11/21,25417,chain E,chain A
+213,7ssz,F,,B,3.25,11/11/21,25417,chain F,chain B
+214,7ssz,G,,C,3.25,11/11/21,25417,chain G,chain C
+215,7ssz,H,,D,3.25,11/11/21,25417,chain H,chain D
+216,7n0h,Z,,C,3.34,05/25/21,24106,chain Z,chain C
+217,7n0h,X,,A,3.34,05/25/21,24106,chain X,chain A
+219,7vnd,D,,A,3.6,10/10/21,32039,chain D,chain A
+220,7vnd,V,,C,3.6,10/10/21,32039,chain V,chain C
+221,7my3,E,,A,2.9,05/20/21,24078,chain E,chain A
+222,7my3,D,,B,2.9,05/20/21,24078,chain D,chain B
+223,7my3,H,,C,2.9,05/20/21,24078,chain H,chain C
+224,7tpr,H,,B,2.39,01/25/22,26062,chain H,chain B
+225,7tpr,D,,B,2.39,01/25/22,26062,chain D,chain B
+226,7tpr,E,,C,2.39,01/25/22,26062,chain E,chain C
+227,7tpr,F,,A,2.39,01/25/22,26062,chain F,chain A
+228,7tpr,G,,C,2.39,01/25/22,26062,chain G,chain C
+229,7x2d,E,,A | B,3.3,02/25/22,32965,chain E,chain A or chain B
+230,7n9t,D,,C,3.18,06/18/21,24262,chain D,chain C
+231,7n9t,F,,B,3.18,06/18/21,24262,chain F,chain B
+232,7n9t,E,,A,3.18,06/18/21,24262,chain E,chain A
+233,7sp9,C,,A,2.9,11/02/21,25369,chain C,chain A
+234,7sp9,B,,A,2.9,11/02/21,25369,chain B,chain A
+235,7p78,H,,E,3.32,07/19/21,12083,chain H,chain E
+236,7p78,B,,A,3.32,07/19/21,12083,chain B,chain A
+237,7p78,D,,C,3.32,07/19/21,12083,chain D,chain C
+238,7p78,Y,,E,3.32,07/19/21,12083,chain Y,chain E
+239,7p78,W,,C,3.32,07/19/21,12083,chain W,chain C
+240,7pc0,F,,C | B,3.0,08/03/21,13315,chain F,chain C or chain B
+241,7cfn,N,,A | B,3.0,06/27/20,30345,chain N,chain A or chain B
+242,7p5w,L,,F,3.5,07/15/21,13203,chain L,chain F
+243,7p5w,I,,C,3.5,07/15/21,13203,chain I,chain C
+244,7p5w,K,,E,3.5,07/15/21,13203,chain K,chain E
+245,7p5w,J,,D,3.5,07/15/21,13203,chain J,chain D
+246,7p5w,H,,B,3.5,07/15/21,13203,chain H,chain B
+247,7p5w,G,,A,3.5,07/15/21,13203,chain G,chain A
+249,7b2q,D,,C | B,3.76,11/27/20,11990,chain D,chain C or chain B
+251,7a29,D,,A,2.94,08/16/20,11617,chain D,chain A
+252,7a29,E,,B,2.94,08/16/20,11617,chain E,chain B
+253,7a29,F,,C,2.94,08/16/20,11617,chain F,chain C
+254,7vbi,N,,A | B,3.0,08/31/21,31880,chain N,chain A or chain B
+257,7cfm,N,,A | B | G,3.0,06/27/20,30344,chain N,chain A or chain B or chain G
+260,7ksg,D,,A,3.33,11/22/20,23018,chain D,chain A
+261,7ksg,E,,B,3.33,11/22/20,23018,chain E,chain B
+262,7ksg,F,,C,3.33,11/22/20,23018,chain F,chain C
+263,7ns6,H,,J,3.18,03/05/21,12561,chain H,chain J
+264,7ns6,S,,M,3.18,03/05/21,12561,chain S,chain M
+265,7ns6,T,,I,3.18,03/05/21,12561,chain T,chain I
+266,7ns6,O,,N,3.18,03/05/21,12561,chain O,chain N
+267,7ns6,U,,K,3.18,03/05/21,12561,chain U,chain K
+268,7ns6,G,,L,3.18,03/05/21,12561,chain G,chain L
+275,7p6k,G,,B,3.8,07/16/21,13230,chain G,chain B
+276,7p6k,I,,F,3.8,07/16/21,13230,chain I,chain F
+277,7p6k,H,,D,3.8,07/16/21,13230,chain H,chain D
+278,7n9c,E,,A,3.71,06/17/21,24256,chain E,chain A
+279,7n9c,D,,C,3.71,06/17/21,24256,chain D,chain C
+280,7nik,F,,A | B,6.2,02/12/21,12361,chain F,chain A or chain B
+282,7nkr,F,,A,5.6,02/18/21,12447,chain F,chain A
+283,7b18,H,,C,2.62,11/24/20,11981,chain H,chain C
+284,7b18,D,,A,2.62,11/24/20,11981,chain D,chain A
+285,7b18,I,,C,2.62,11/24/20,11981,chain I,chain C
+286,7b18,E,,A,2.62,11/24/20,11981,chain E,chain A
+287,7b18,G,,B,2.62,11/24/20,11981,chain G,chain B
+288,7b18,F,,B,2.62,11/24/20,11981,chain F,chain B
+290,7xjh,N,,A | B,3.3,04/18/22,33227,chain N,chain A or chain B
+293,7p5v,G,,A,3.06,07/15/21,13202,chain G,chain A
+294,7p5v,L,,F,3.06,07/15/21,13202,chain L,chain F
+295,7p5v,K,,E,3.06,07/15/21,13202,chain K,chain E
+296,7p5v,H,,B,3.06,07/15/21,13202,chain H,chain B
+297,7p5v,J,,D,3.06,07/15/21,13202,chain J,chain D
+298,7p5v,I,,C,3.06,07/15/21,13202,chain I,chain C
+299,7qn6,M,,D,2.9,12/20/21,14068,chain M,chain D
+300,7qn6,K,,B,2.9,12/20/21,14068,chain K,chain B
+301,7qn6,L,,C,2.9,12/20/21,14068,chain L,chain C
+305,7pqg,B,,A,3.7,09/21/21,13593,chain B,chain A
+306,7rg9,N,,A,3.2,07/14/21,24445,chain N,chain A
+307,7rg9,E,,A | B,3.2,07/14/21,24445,chain E,chain A or chain B
+308,7wpf,T,,S,2.92,01/23/22,32685,chain T,chain S
+309,7wpf,Z,,Y,2.92,01/23/22,32685,chain Z,chain Y
+310,7wpf,W,,V,2.92,01/23/22,32685,chain W,chain V
+311,6wpw,N,,C | D | G,3.1,04/28/20,21866,chain N,chain C or chain D or chain G
+312,7sp6,B,,A,3.1,11/02/21,25366,chain B,chain A
+313,7sp6,C,,A,3.1,11/02/21,25366,chain C,chain A
+314,7cx4,N,,A | B,2.9,09/01/20,30491,chain N,chain A or chain B
+315,7fin,N,,A | B | G,3.1,07/31/21,31604,chain N,chain A or chain B or chain G
+320,7fig,N,,A | B | G,3.9,07/31/21,31596,chain N,chain A or chain B or chain G
+321,7jwb,D,,A | B,3.2,08/25/20,22514,chain D,chain A or chain B
+322,7wuj,N,,A,3.3,02/08/22,32837,chain N,chain A
+323,7wuj,S,,A | B,3.3,02/08/22,32837,chain S,chain A or chain B
+324,7p7a,A,,B,4.76,07/19/21,12085,chain A,chain B
+325,7p7a,D,,E,4.76,07/19/21,12085,chain D,chain E
+333,7php,K,,L,3.47,08/18/21,13424,chain K,chain L
+334,7php,N,,A,3.47,08/18/21,13424,chain N,chain A
+341,7r4q,E,,B,3.6,02/09/22,14314,chain E,chain B
+342,7r4q,D,,A,3.6,02/09/22,14314,chain D,chain A
+343,6lmk,N,,A | B,3.7,12/26/19,0917,chain N,chain A or chain B
+344,7mjh,D,,A,2.66,04/20/21,23873,chain D,chain A
+345,7mjh,E,,B,2.66,04/20/21,23873,chain E,chain B
+346,7mjh,F,,C,2.66,04/20/21,23873,chain F,chain C
+347,7nvo,N,,E,3.5,03/15/21,12608,chain N,chain E
+348,7nvo,n,,e,3.5,03/15/21,12608,chain n,chain e
+349,7ocy,C,,A | B,4.25,04/28/21,12816,chain C,chain A or chain B
+350,7x2f,E,,A | B | D,3.0,02/25/22,32966,chain E,chain A or chain B or chain D
+351,7oan,F,,A,3.0,04/19/21,12777,chain F,chain A
+352,7oan,G,,B,3.0,04/19/21,12777,chain G,chain B
+353,7oan,H,,C,3.0,04/19/21,12777,chain H,chain C
+354,7qnb,N,,E | D,3.1,12/20/21,14073,chain N,chain E or chain D
+357,7me7,B,,R,3.73,04/06/21,23788,chain B,chain R
+358,7me7,A,,R,3.73,04/06/21,23788,chain A,chain R
+359,7n0g,Z,,C,3.02,05/25/21,24105,chain Z,chain C
+360,7n0g,Y,,B,3.02,05/25/21,24105,chain Y,chain B
+361,7n0g,X,,A,3.02,05/25/21,24105,chain X,chain A
+362,7nj5,F,,A,4.63,02/16/21,12373,chain F,chain A
+365,7n9b,F,,C | B,3.8,06/17/21,24255,chain F,chain C or chain B
+366,7n9b,D,,A,3.8,06/17/21,24255,chain D,chain A
+368,7p5y,J,,D,3.29,07/15/21,13208,chain J,chain D
+369,7p5y,H,,B,3.29,07/15/21,13208,chain H,chain B
+370,7p5y,I,,C,3.29,07/15/21,13208,chain I,chain C
+371,7p5y,G,,A,3.29,07/15/21,13208,chain G,chain A
+372,7p5y,K,,E,3.29,07/15/21,13208,chain K,chain E
+373,7p5y,L,,F,3.29,07/15/21,13208,chain L,chain F
+374,7pqq,B,,A,3.3,09/18/21,13596,chain B,chain A
+375,7spa,B,,A,2.8,11/02/21,25370,chain B,chain A
+376,7spa,C,,A,2.8,11/02/21,25370,chain C,chain A
+377,7paf,B,,D,3.75,07/29/21,13268,chain B,chain D
+378,7paf,C,,A,3.75,07/29/21,13268,chain C,chain A
+384,7m74,N,,L,3.93,03/26/21,23708,chain N,chain L
+385,7pbz,F,,C | B,2.79,08/03/21,13314,chain F,chain C or chain B
+386,7kh0,N,,A | B,2.8,10/19/20,22872,chain N,chain A or chain B
+387,7kh0,S,,A,2.8,10/19/20,22872,chain S,chain A
+388,7whi,D,,B,2.93,12/30/21,32500,chain D,chain B
+389,7whi,E,,C,2.93,12/30/21,32500,chain E,chain C
+390,7whi,G,,A,2.93,12/30/21,32500,chain G,chain A
+391,7whi,F,,A,2.93,12/30/21,32500,chain F,chain A
+392,7dur,N,,A | B,3.3,01/11/21,30867,chain N,chain A or chain B
+393,7qn8,K,,B,3.1,12/20/21,14070,chain K,chain B
+394,7qn8,M,,D,3.1,12/20/21,14070,chain M,chain D
+395,7qn8,L,,C,3.1,12/20/21,14070,chain L,chain C
+396,7ul5,D,,A,3.1,04/03/22,26592,chain D,chain A
+397,7nll,A,,D,2.89,02/22/21,12465,chain A,chain D
+398,7nll,C,,B,2.89,02/22/21,12465,chain C,chain B
+399,7qic,B,,A,4.1,12/14/21,13987,chain B,chain A
+400,7qic,C,,A,4.1,12/14/21,13987,chain C,chain A
+402,7nvn,N,,E,3.0,03/15/21,12607,chain N,chain E
+403,7nvn,n,,e,3.0,03/15/21,12607,chain n,chain e
+404,7dge,C,,A,3.65,11/11/20,30672,chain C,chain A
+405,7dge,D,,B,3.65,11/11/20,30672,chain D,chain B
+406,7tyy,N,,A | B,3.0,02/14/22,26199,chain N,chain A or chain B
+408,7p16,B,,A,4.3,07/01/21,13157,chain B,chain A
+409,7ckw,N,,A | B | G,3.22,07/20/20,30392,chain N,chain A or chain B or chain G
+410,7fiy,N,,A | B,3.4,08/01/21,31606,chain N,chain A or chain B
+411,7f53,N,,A | B,3.0,06/21/21,31456,chain N,chain A or chain B
+416,7nvm,N,,E,3.1,03/15/21,12606,chain N,chain E
+417,7nvm,n,,e,3.1,03/15/21,12606,chain n,chain e
+418,6vn7,N,,A | B,3.2,01/29/20,21249,chain N,chain A or chain B
+419,7ljd,N,,A | B | G,3.2,01/28/21,23391,chain N,chain A or chain B or chain G
+420,7whj,E,,B,3.27,12/30/21,32501,chain E,chain B
+421,7whj,F,,B,3.27,12/30/21,32501,chain F,chain B
+422,7whj,D,,C | A,3.27,12/30/21,32501,chain D,chain C or chain A
+424,7whk,E,,B,3.01,12/30/21,32503,chain E,chain B
+425,7whk,D,,C,3.01,12/30/21,32503,chain D,chain C
+426,7whk,F,,C,3.01,12/30/21,32503,chain F,chain C
+427,7whk,H,,A,3.01,12/30/21,32503,chain H,chain A
+428,7whk,G,,A,3.01,12/30/21,32503,chain G,chain A
+430,7rtb,N,,A | B,2.14,08/12/21,24680,chain N,chain A or chain B
+431,7s1m,N,,A | B | G,2.41,09/02/21,24805,chain N,chain A or chain B or chain G
+432,7dhr,N,,A | B | G,3.8,11/17/20,30682,chain N,chain A or chain B or chain G
+433,3jbd,7,,3,4.7,08/26/15,5886,chain 7,chain 3
+434,7ept,N,,A | B,3.0,04/27/21,31232,chain N,chain A or chain B
+435,7bw0,N,,A | B | G,3.9,04/12/20,30221,chain N,chain A or chain B or chain G
+436,7f55,N,,A | B,3.1,06/21/21,31458,chain N,chain A or chain B
+440,7nk6,F,,A | B,6.72,02/17/21,12431,chain F,chain A or chain B
+441,7tyf,N,,A | B | G,2.2,02/13/22,26178,chain N,chain A or chain B or chain G
+442,7wu2,N,,A | B,2.8,02/05/22,32817,chain N,chain A or chain B
+445,7f4i,N,,A | B,3.1,06/18/21,31453,chain N,chain A or chain B
+448,7my2,D,,C,2.65,05/20/21,24077,chain D,chain C
+449,7my2,A,,B,2.65,05/20/21,24077,chain A,chain B
+450,7my2,H,,E,2.65,05/20/21,24077,chain H,chain E
+451,7dst,E,,C,3.1,01/02/21,30845,chain E,chain C
+454,5tsj,1,,J | H,8.7,10/29/16,8462,chain 1,chain J or chain H
+455,5tsj,2,,G | I,8.7,10/29/16,8462,chain 2,chain G or chain I
+456,7p60,H,,D,3.8,07/15/21,13213,chain H,chain D
+457,7p60,G,,B,3.8,07/15/21,13213,chain G,chain B
+458,7p60,I,,F,3.8,07/15/21,13213,chain I,chain F
+460,7mdw,A,,R,3.58,04/06/21,23782,chain A,chain R
+461,7mdw,B,,R,3.58,04/06/21,23782,chain B,chain R
+468,7r4r,D,,C,3.9,02/09/22,14315,chain D,chain C
+469,7qia,B,,A,3.5,12/14/21,13985,chain B,chain A
+470,7qia,C,,A,3.5,12/14/21,13985,chain C,chain A
+473,7x8s,N,,A | B,3.09,03/14/22,33058,chain N,chain A or chain B
+474,7f0t,E,,A | B | D,3.1,06/07/21,31404,chain E,chain A or chain B or chain D
+478,7nki,F,,A,4.67,02/18/21,12440,chain F,chain A
+479,7fg3,D,,A,3.9,07/25/21,31577,chain D,chain A
+481,7nk8,F,,A | B,5.34,02/17/21,12433,chain F,chain A or chain B
+482,7dty,N,,A | B | G,2.98,01/06/21,30860,chain N,chain A or chain B or chain G
+483,7tyn,N,,A | B,2.6,02/13/22,26188,chain N,chain A or chain B
+484,7piv,N,,A | B,2.86,08/23/21,13454,chain N,chain A or chain B
+485,7crh,N,,A | B,3.3,08/13/20,30452,chain N,chain A or chain B
+486,7nj7,F,,A,4.82,02/16/21,12375,chain F,chain A
+487,7vne,U,,A,3.5,10/10/21,32040,chain U,chain A
+488,7vne,W,,C,3.5,10/10/21,32040,chain W,chain C
+489,7vne,V,,C | B,3.5,10/10/21,32040,chain V,chain C or chain B
+490,6zhd,D,,A,3.7,06/22/20,11218,chain D,chain A
+491,6zhd,E,,C,3.7,06/22/20,11218,chain E,chain C
+492,6zhd,F,,B,3.7,06/22/20,11218,chain F,chain B
+494,7vui,N,,A | B,3.3,11/02/21,32129,chain N,chain A or chain B
+495,7nqk,B,,A,3.5,03/01/21,12528,chain B,chain A
+496,7nkc,F,,B | C,4.46,02/17/21,12437,chain F,chain B or chain C
+497,7b17,B,,A,4.01,11/23/20,11980,chain B,chain A
+499,7qnc,G,,D,2.9,12/20/21,14074,chain G,chain D
+500,7qnc,F,,C,2.9,12/20/21,14074,chain F,chain C
+502,7ljc,N,,A | B | G,3.0,01/28/21,23390,chain N,chain A or chain B or chain G
+503,7p79,D,,E,4.0,07/19/21,12084,chain D,chain E
+504,7p79,H,,A,4.0,07/19/21,12084,chain H,chain A
+505,7p79,B,,C,4.0,07/19/21,12084,chain B,chain C
+506,7rnn,C,,D,2.86,07/29/21,24580,chain C,chain D
+507,7x2c,E,,A | B,3.2,02/25/22,32964,chain E,chain A or chain B
+510,7ngh,D,,B,3.5,02/09/21,12314,chain D,chain B
+511,7r4i,D,,A,3.2,02/08/22,14313,chain D,chain A
+512,7r4i,E,,B,3.2,02/08/22,14313,chain E,chain B
+514,7nj4,F,,A,5.84,02/16/21,12372,chain F,chain A
+515,7epb,C,,A,3.1,04/26/21,31236,chain C,chain A
+516,7epb,D,,B,3.1,04/26/21,31236,chain D,chain B
+518,7f4h,N,,A | B,2.7,06/18/21,31452,chain N,chain A or chain B
+519,7f4h,S,,A | G,2.7,06/18/21,31452,chain S,chain A or chain G
+522,7tyo,N,,A | B,2.7,02/14/22,26190,chain N,chain A or chain B
+524,7nvl,n,,e,2.5,03/15/21,12605,chain n,chain e
+525,7nvl,N,,E,2.5,03/15/21,12605,chain N,chain E
+527,7ul2,D,,R,2.4,04/03/22,26589,chain D,chain R
+529,7bc6,B,,A,3.2,12/18/20,12140,chain B,chain A
+530,7wq4,N,,A | B,2.6,01/24/22,32699,chain N,chain A or chain B
+531,7f1o,E,,A | B,3.13,06/09/21,31421,chain E,chain A or chain B
+533,7mbx,N,,A | B | G,1.95,04/01/21,23749,chain N,chain A or chain B or chain G
+534,7nka,F,,A,4.07,02/17/21,12435,chain F,chain A
+536,7lly,N,,A | B,3.3,02/04/21,23436,chain N,chain A or chain B
+537,7b2m,D,,B | A,3.39,11/27/20,11988,chain D,chain B or chain A
+538,7sla,B,,A,3.15,10/23/21,25196,chain B,chain A
+539,7kkk,B,,A,3.03,10/27/20,22907,chain B,chain A
+540,7kkk,D,,C,3.03,10/27/20,22907,chain D,chain C
+541,7kkk,F,,E,3.03,10/27/20,22907,chain F,chain E
+542,7jhg,N,,L,3.47,07/20/20,22336,chain N,chain L
+544,7b14,D,,A,3.79,11/23/20,11978,chain D,chain A
+546,7jjo,N,,A | B,2.6,07/27/20,22357,chain N,chain A or chain B
+547,7jvq,N,,A | B | G,3.0,08/22/20,22510,chain N,chain A or chain B or chain G
+548,7bb7,G,,E | C | F,4.4,12/17/20,12129,chain G,chain E or chain C or chain F
+549,7nk4,F,,A,5.32,02/17/21,12430,chain F,chain A
+550,7k65,B,,A,3.4,09/18/20,22689,chain B,chain A
+551,7d68,N,,A | B,3.0,09/29/20,30590,chain N,chain A or chain B
+552,6itc,C,,G | A,3.45,11/21/18,9731,chain C,chain G or chain A
+553,6itc,V,,Y | E,3.45,11/21/18,9731,chain V,chain Y or chain E
+557,7cx3,N,,A | B,2.8,09/01/20,30490,chain N,chain A or chain B
+558,7ul4,D,,A,2.8,04/03/22,26591,chain D,chain A
+561,7pbd,F,,C | B,3.04,08/02/21,13290,chain F,chain C or chain B
+562,7mej,A,,R,3.55,04/06/21,23790,chain A,chain R
+563,7mej,B,,R,3.55,04/06/21,23790,chain B,chain R
+564,6x1a,N,,A | B,2.5,05/18/20,21994,chain N,chain A or chain B
+566,7wuq,N,,A | B | G,2.9,02/09/22,32838,chain N,chain A or chain B or chain G
+567,6x18,N,,A | B | G,2.1,05/18/20,21992,chain N,chain A or chain B or chain G
+568,7vbh,N,,A | B,3.0,08/31/21,31879,chain N,chain A or chain B
+569,7a5v,O,,A,1.7,08/22/20,11657,chain O,chain A
+570,7sl8,B,,A,3.4,10/23/21,25194,chain B,chain A
+572,7f4d,N,,A | B,3.0,06/18/21,31448,chain N,chain A or chain B
+574,7x8r,N,,A | B,2.61,03/14/22,33057,chain N,chain A or chain B
+575,7tyl,N,,A | B | G,3.3,02/13/22,26184,chain N,chain A or chain B or chain G
+577,7bb6,B,,C | E,4.2,12/17/20,12128,chain B,chain C or chain E
+578,7rmi,N,,A | B,3.2,07/27/21,24572,chain N,chain A or chain B
+582,7rmh,N,,A | B,3.1,07/27/21,24570,chain N,chain A or chain B
+583,7tzf,N,,A | B | G,2.4,02/15/22,26208,chain N,chain A or chain B or chain G
+584,6wi9,N,,A | B,4.3,04/09/20,21683,chain N,chain A or chain B
+586,7bc7,B,,A,3.3,12/18/20,12141,chain B,chain A
+587,7d7m,E,,D | B,3.3,10/05/20,30608,chain E,chain D or chain B
+588,7mji,E,,B,2.81,04/20/21,23874,chain E,chain B
+590,7sl9,B,,A,3.5,10/23/21,25195,chain B,chain A
+591,7rmg,N,,A | B,3.0,07/27/21,24569,chain N,chain A or chain B
+592,7bz2,N,,B | A,3.82,04/26/20,30249,chain N,chain B or chain A
+593,7dhi,N,,A | B,3.26,11/15/20,30681,chain N,chain A or chain B
+594,7c2e,N,,A | B,4.2,05/07/20,30274,chain N,chain A or chain B
+595,7e14,N,,A | B,2.9,01/30/21,30936,chain N,chain A or chain B
+596,7zlg,K,,L,2.72,01/11/23,14779,chain K,chain L
+597,7zlh,K,,L,2.75,01/11/23,14780,chain K,chain L
+598,7zli,K,,L,2.99,01/11/23,14781,chain K,chain L
+600,8hii,N,,L,3.57,12/21/22,34817,chain N,chain L
+603,7xw6,N,,A | B,2.78,08/17/22,33492,chain N,chain A or chain B
+605,7sk7,K,,C,3.3,07/27/22,25175,chain K,chain C
+607,7zyi,K,,L,2.88,07/13/22,15024,chain K,chain L
+611,6ni2,A,,B | V,4.0,12/26/18,9375,chain A,chain B or chain V
+612,7wpe,W,,V,2.69,01/23/22,32684,chain W,chain V
+613,7wpe,Z,,Y,2.69,01/23/22,32684,chain Z,chain Y
+614,6ww2,K,,L,3.7,05/07/20,21927,chain K,chain L
+615,7jhh,N,,L,3.92,07/20/20,22337,chain N,chain L
+616,7ul3,C,,A,3.0,04/03/22,26590,chain C,chain A
+617,7tuy,K,,L,2.98,02/03/22,26135,chain K,chain L

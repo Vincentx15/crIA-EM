@@ -1,0 +1,11 @@
+wget
+requests
+pandas
+tqdm
+mrcfile
+scikit-learn
+scipy
+mmtf-python
+matplotlib
+tensorboard
+cripser
