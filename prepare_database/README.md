@@ -1,80 +1,43 @@
 ## Data processing pipeline
 
+These are the steps to follow in order to get the list of systems as well as the structures and maps used for learning.
+The resulting list of systems is also present in the git.
+
+
 ### Getting the initial data
 
-The data is originally fetched from SabDab.
-A few obsolete systems are removed 7ny5.
-We remove very weird structures (fusion protein or immunoglobulins M)
-7khf, 8blq, 7uvl, 8ema, 8ae{0-1-3}, 8ad{x,y}, 7xq8, 7rxd, 7rxc, 7l6m
-They were found to cause bugs later on.
-
-We also fix systems where chains are considered separate :
-7YVN, chain HI
-7YVP, chain IJ
-8HHX, chain HI
-8HHY, FW-GI
-8DXS, FI-GJ
-7XOD, RS-UV-XY
-7MLV, KF
-6XJA (missing chain AB and missing antigen)
-
-Nanobodies were present in the fab files. They were annotated as having just one chain and no antigen partner.
-We moved them to the nanobody file :
-7zl{g-h-i-j} chain K bound to L
-8hi{i-j-k} chain N bound to L
-7xw6 chain N bound to AB
-7sk7 chain K bound to C
-7sk5 chain E bound to C
-7zyi chain K bound to L
-7xod chain T-W-Z bound to S-V-Y
-6ni2 chain A bound to B | V
-7wpe chain W-Z bound to V-Y
-6ww2 chain K bound to L
-7jhh chain N bound to L
-7ul3 chain C bound to A
-7tuy chain K bound to L
-
-Fabs were present in the nanobody file
-7pij chain HL bound to N
-7wpd chain XY bound to A
-7wpf chain RS, UV, XY
-7wpf chain AC-HL bound to E-N
-7php chain HL bound to N
-7m74 chain HL bound to A
-
-Floating nanobodies (no antigens) were present in the nanobody file
-7pij K bound to L
-7wpd Z bound to Y
-7nkr F bound to A
-7wpf T-W-Z bound to S-V-Y
-7wpf chain K-F bound to L-C
-7php chain K bound to L
-7m74 chain N bound to L
-7jhg chain N bound to L
-7nis-7nk1-7nk2-7nk6-7nkc-7nj4-7nka chain F bound to A/B-A-A/B-A/B-B/C-A-A
+The data was originally fetched from SabDab in July 2023. 
+We manually curated it, as several lines pertain to Fabs instead of nanobodies.
+We explain our manual curation steps in the file named `manual_curation.txt`.
+The resulting initial files are in `ROOT/data/csvs/fabs.tsv` and `ROOT/data/nano_csvs/nanobodies.tsv`.
 
 
-### Getting the right pairs and downloading the data
+### Getting the right pairs and downloading the structure and map files.
 
-This is done in `download_data.py`
 The PDB ids and chain selections are retrieved, and stored in `cleaned.csv`.
 Then, using the PDB, we find the corresponding cryo-em maps and build a mapping pdb_id : em_id.
 We add the mrc column and dump `mapped.csv`
-Finally, we download all corresponding maps and cifs.
+
+Using this intermediary result, we download all corresponding maps and cifs.
+```bash
+python download_data.py
+```
 
 ### Filtering the database
 
-This is done in `filter_database.py`.
 Starting from mapped.csv, the parsed output of SabDab, we add missing resolutions by opening the cif files,
 yielding the `resolution.csv` file.
-Then, we use phenix.validation_cryoem to get add a validation score column to that file.
-Then, we use dock_in_map to try and increase those scores.
-We dump `validated.csv` and `docked.csv` files with added columns for both validations
-Actually, analysing those results made us realize that these scores were not great even for correct files.
-This can be explained by missing B-factors.
 Finally, we process the csv without using validation and docking scores : we simply remove systems with resolution
 below 10A or ones with no antibodies or antigen chains, and group pdb_ids together.
 We dump `filtered.csv` and split it to obtain `filtered_{train,val,test}.csv`.
+```bash
+python filter_database.py
+```
+
+In a deprecated version, we also tried to use phenix to score our systems and keep only the ones with a good fit. 
+However, it crashed on many systems and analysing those results made us realize that these scores were not great even for correct files.
+This can be explained by missing B-factors.
+Thus, we deprecated these steps.
 
 ### Processing the database
 
@@ -99,4 +62,3 @@ Given an antibody, pymol align now gives us a translation and rotation to transf
 
 All of these steps apply to the production of nanobody data.
 We start with the .tsv result of cryo-EM systems containing nanobodies
-We manually curate it, as several lines pertain to Fabs instead of nanobodies.

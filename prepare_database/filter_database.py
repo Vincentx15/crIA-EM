@@ -80,166 +80,6 @@ def clean_resolution(datadir_name='../data/pdb_em',
     df.to_csv(csv_out)
 
 
-def validate_one(mrc, pdb, sel=None, resolution=4.):
-    if mrc is None:
-        return 2, f"Failed on file loading for {pdb}"
-    try:
-        if sel is not None:
-            with pymol2.PyMOL() as p:
-                p.cmd.feedback("disable", "all", "everything")
-                p.cmd.load(pdb, 'toto')
-                outname = os.path.join(os.path.dirname(pdb), 'temp.pdb')
-                p.cmd.save(outname, f'toto and ({sel})')
-        pdb_to_score = pdb if sel is None else outname
-
-        cmd = f'{PHENIX_VALIDATE} {pdb_to_score} {mrc} run="*model_vs_data" resolution={resolution}'
-        res = subprocess.run(cmd.split(), capture_output=True)
-
-        if sel is not None:
-            os.remove(pdb_to_score)
-
-        returncode = res.returncode
-        if returncode > 0:
-            return returncode, res.stderr.decode()
-        stdout = res.stdout.decode()
-        stdout_aslist = list(stdout.splitlines())
-        relevant_lines_start = stdout_aslist.index('Map-model CC (overall)')
-        relevant_lines = stdout_aslist[relevant_lines_start + 2:relevant_lines_start + 6]
-        # We now have 4 values : CC_mask, CC_peaks, CC_box. For now let us just us CC_mask
-        cc_mask = float(relevant_lines[0].split()[-1])
-        return res.returncode, cc_mask
-    except Exception as e:
-        return 1, e
-
-
-def add_validation_score(csv_in, csv_out, datadir_name='../data/pdb_em'):
-    # Prepare input list
-    df = pd.read_csv(csv_in, index_col=0, dtype={'mrc': 'str'})
-    df = df[['pdb', 'Hchain', 'Lchain', 'resolution', 'mrc']]
-    to_process = []
-    for _, row in df.iterrows():
-        pdb, heavy_chain, light_chain, resolution, mrc = row.values
-        pdb = pdb.upper()
-        system_dir = os.path.join(datadir_name, f"{pdb}_{mrc}")
-        pdb_path = os.path.join(system_dir, f"{pdb}.cif")
-        mrc_path = os.path.join(system_dir, f"emd_{mrc}.map.gz")
-        selection = list_id_to_pymol_sel([heavy_chain, light_chain])
-        to_process.append((mrc_path, pdb_path, selection, resolution))
-
-    # Parallel computation
-    l = multiprocessing.Lock()
-    pool = multiprocessing.Pool(processes=24, initializer=init, initargs=(l,), )
-    results = pool.starmap(validate_one, tqdm(to_process, total=len(to_process)))
-
-    all_results = []
-    all_errors = []
-    for i, (return_code, result) in enumerate(results):
-        if return_code == 0:
-            all_results.append(result)
-        else:
-            all_results.append(-1)
-            all_errors.append((return_code, result))
-    df['validation_score'] = all_results
-    df.to_csv(csv_out)
-    for x in all_errors:
-        print(x)
-
-
-def dock_one(mrc, pdb, sel=None, resolution=4.):
-    # nproc 1 try 1 : 100.1s
-    # nproc 1 : 96.4 s
-    # nproc 4 try 1 : 112.16 s
-    # nproc 4 : 109.10 s
-    if mrc is None:
-        return 2, f"Failed on file loading for {pdb}"
-    try:
-        # with pymol2.PyMOL() as p:
-        #     p.cmd.feedback("disable", "all", "everything")
-        #     p.cmd.load(pdb, 'toto')
-        #     coords = p.cmd.get_coords('toto')
-        #     import numpy as np
-        #     from scipy.spatial.transform import Rotation as R
-        #     rotated = R.random().apply(coords)
-        #     translated = rotated + np.array([10, 20, 30])[None, :]
-        #     p.cmd.load_coords(translated, "toto", state=1)
-        #     outname = os.path.join(os.path.dirname(pdb), 'rotated.pdb')
-        #     p.cmd.save(outname, 'toto')
-        pdb_out = os.path.join(os.path.dirname(pdb), 'default.pdb')
-
-        if sel is not None:
-            with pymol2.PyMOL() as p:
-                p.cmd.feedback("disable", "all", "everything")
-                p.cmd.load(pdb, 'toto')
-                outname = os.path.join(os.path.dirname(pdb), 'temp.pdb')
-                p.cmd.save(outname, f'toto and ({sel})')
-                hchain, lchain = sel.split()[1], sel.split()[4]
-            pdb_out = os.path.join(os.path.dirname(pdb), f'docked_{hchain}_{lchain}.pdb')
-        pdb_to_score = pdb if sel is None else outname
-
-        cmd = f'{PHENIX_DOCK_IN_MAP} {pdb_to_score} {mrc} pdb_out={pdb_out} resolution={resolution}'
-        res = subprocess.run(cmd.split(), capture_output=True, timeout=5. * 3600)
-
-        if sel is not None:
-            os.remove(pdb_to_score)
-
-        returncode = res.returncode
-        if returncode > 0:
-            return returncode, res.stderr.decode()
-        stdout = res.stdout.decode()
-        stdout_aslist = list(stdout.splitlines())
-        end_of_list = stdout_aslist[-20:]
-        translation_line = next(line for line in end_of_list if line.startswith('TRANS'))
-        translation_norm = np.linalg.norm(np.array(translation_line.split()[1:]))
-        if translation_norm > 8:
-            return 3, "too big translation"
-        score_line = next(line for line in end_of_list if line.startswith('Wrote placed'))
-        score = float(score_line.split()[8])
-        return res.returncode, score
-    except TimeoutError as e:
-        return 1, e
-    except Exception as e:
-        return 4, e
-
-
-def add_docking_score(csv_in, csv_out, datadir_name='../data/pdb_em'):
-    # Prepare input list
-    df = pd.read_csv(csv_in, index_col=0, dtype={'mrc': 'str'})
-    df = df[['pdb', 'Hchain', 'Lchain', 'resolution', 'mrc']]
-    to_process = []
-    for _, row in df.iterrows():
-        pdb, heavy_chain, light_chain, resolution, mrc = row.values
-        pdb = pdb.upper()
-        system_dir = os.path.join(datadir_name, f"{pdb}_{mrc}")
-        pdb_path = os.path.join(system_dir, f"{pdb}.cif")
-        mrc_path = os.path.join(system_dir, f"emd_{mrc}.map.gz")
-        selection = list_id_to_pymol_sel([heavy_chain, light_chain])
-        to_process.append((mrc_path, pdb_path, selection, resolution))
-
-    # Parallel computation
-    l = multiprocessing.Lock()
-    pool = multiprocessing.Pool(processes=24, initializer=init, initargs=(l,), )
-    results = pool.starmap(dock_one, tqdm(to_process, total=len(to_process)))
-
-    all_results = []
-    all_errors = []
-    for i, (return_code, result) in enumerate(results):
-        if return_code == 0:
-            all_results.append(result)
-        else:
-            all_results.append(-return_code)
-            all_errors.append((return_code, result))
-    df['docked_validation_score'] = all_results
-    df.to_csv(csv_out)
-    for x in all_errors:
-        print(x)
-    # 1 Timeout + error from dock in map, 2 mrc loading buggy, 3 big norm, 4 something else
-    # Analysis of errors :
-    # 1 (78)  : Collide but a few timeout and a lot just say they fail to find a good solution
-    # 2 (3)   : Some don't exist anymore in PDB (obsolete) : 7n01, 6mf7
-    # 3 (671) : Very frequent, I count those as a failure for dock in map
-    # 4 (42)  : FileNotFoundError or StopIteration.. mysterious
-
-
 def filter_csv(csv_in="../data/csvs/docked.csv",
                max_resolution=10.,
                csv_out='../data/csvs/filtered.csv',
@@ -313,7 +153,8 @@ def split_csv(csv_file="../data/csvs/filtered.csv", out_basename='../data/csvs/f
     """
     :param csv_file:
     :param out_basename:
-    :param other: if not None, respect the data split of another split (to be able to cross train)
+    :param other: if not None, respect the data split of another split (to be able to cross train).
+    This is used to build a nanobodies training set compatible with the fab one.
     :return:
     """
     df = pd.read_csv(csv_file, index_col=0, dtype={'mrc': 'str'})
@@ -363,35 +204,162 @@ def split_csv(csv_file="../data/csvs/filtered.csv", out_basename='../data/csvs/f
     return
 
 
-if __name__ == '__main__':
-    pass
+def deprecated():
+    def validate_one(mrc, pdb, sel=None, resolution=4.):
+        if mrc is None:
+            return 2, f"Failed on file loading for {pdb}"
+        try:
+            if sel is not None:
+                with pymol2.PyMOL() as p:
+                    p.cmd.feedback("disable", "all", "everything")
+                    p.cmd.load(pdb, 'toto')
+                    outname = os.path.join(os.path.dirname(pdb), 'temp.pdb')
+                    p.cmd.save(outname, f'toto and ({sel})')
+            pdb_to_score = pdb if sel is None else outname
 
-    nanobodies = True
-    if not nanobodies:
-        mapped = '../data/csvs/mapped.csv'
-        resolution = '../data/csvs/resolution.csv'
-        validated = '../data/csvs/validated.csv'
-        docked = '../data/csvs/docked.csv'
-        filtered = '../data/csvs/filtered.csv'
-        out_basename = '../data/csvs/filtered'
-        sorted_filtered = '../data/csvs/sorted_filtered.csv'
-        sorted_out_basename = '../data/csvs/sorted_filtered'
-        other = None
-        sorted_other = None
-    else:
-        mapped = '../data/nano_csvs/mapped.csv'
-        resolution = '../data/nano_csvs/resolution.csv'
-        validated = '../data/nano_csvs/validated.csv'
-        docked = '../data/nano_csvs/docked.csv'
-        filtered = '../data/nano_csvs/filtered.csv'
-        out_basename = '../data/nano_csvs/filtered'
-        other = '../data/csvs/filtered'
-        sorted_filtered = '../data/nano_csvs/sorted_filtered.csv'
-        sorted_out_basename = '../data/nano_csvs/sorted_filtered'
-        sorted_other = '../data/csvs/sorted_filtered'
+            cmd = f'{PHENIX_VALIDATE} {pdb_to_score} {mrc} run="*model_vs_data" resolution={resolution}'
+            res = subprocess.run(cmd.split(), capture_output=True)
 
-    # ADD RESOLUTION
-    clean_resolution(csv_in=mapped, csv_out=resolution)
+            if sel is not None:
+                os.remove(pdb_to_score)
+
+            returncode = res.returncode
+            if returncode > 0:
+                return returncode, res.stderr.decode()
+            stdout = res.stdout.decode()
+            stdout_aslist = list(stdout.splitlines())
+            relevant_lines_start = stdout_aslist.index('Map-model CC (overall)')
+            relevant_lines = stdout_aslist[relevant_lines_start + 2:relevant_lines_start + 6]
+            # We now have 4 values : CC_mask, CC_peaks, CC_box. For now let us just us CC_mask
+            cc_mask = float(relevant_lines[0].split()[-1])
+            return res.returncode, cc_mask
+        except Exception as e:
+            return 1, e
+
+    def add_validation_score(csv_in, csv_out, datadir_name='../data/pdb_em'):
+        # Prepare input list
+        df = pd.read_csv(csv_in, index_col=0, dtype={'mrc': 'str'})
+        df = df[['pdb', 'Hchain', 'Lchain', 'resolution', 'mrc']]
+        to_process = []
+        for _, row in df.iterrows():
+            pdb, heavy_chain, light_chain, resolution, mrc = row.values
+            pdb = pdb.upper()
+            system_dir = os.path.join(datadir_name, f"{pdb}_{mrc}")
+            pdb_path = os.path.join(system_dir, f"{pdb}.cif")
+            mrc_path = os.path.join(system_dir, f"emd_{mrc}.map.gz")
+            selection = list_id_to_pymol_sel([heavy_chain, light_chain])
+            to_process.append((mrc_path, pdb_path, selection, resolution))
+
+        # Parallel computation
+        l = multiprocessing.Lock()
+        pool = multiprocessing.Pool(processes=24, initializer=init, initargs=(l,), )
+        results = pool.starmap(validate_one, tqdm(to_process, total=len(to_process)))
+
+        all_results = []
+        all_errors = []
+        for i, (return_code, result) in enumerate(results):
+            if return_code == 0:
+                all_results.append(result)
+            else:
+                all_results.append(-1)
+                all_errors.append((return_code, result))
+        df['validation_score'] = all_results
+        df.to_csv(csv_out)
+        for x in all_errors:
+            print(x)
+
+    def dock_one(mrc, pdb, sel=None, resolution=4.):
+        # nproc 1 try 1 : 100.1s
+        # nproc 1 : 96.4 s
+        # nproc 4 try 1 : 112.16 s
+        # nproc 4 : 109.10 s
+        if mrc is None:
+            return 2, f"Failed on file loading for {pdb}"
+        try:
+            # with pymol2.PyMOL() as p:
+            #     p.cmd.feedback("disable", "all", "everything")
+            #     p.cmd.load(pdb, 'toto')
+            #     coords = p.cmd.get_coords('toto')
+            #     import numpy as np
+            #     from scipy.spatial.transform import Rotation as R
+            #     rotated = R.random().apply(coords)
+            #     translated = rotated + np.array([10, 20, 30])[None, :]
+            #     p.cmd.load_coords(translated, "toto", state=1)
+            #     outname = os.path.join(os.path.dirname(pdb), 'rotated.pdb')
+            #     p.cmd.save(outname, 'toto')
+            pdb_out = os.path.join(os.path.dirname(pdb), 'default.pdb')
+
+            if sel is not None:
+                with pymol2.PyMOL() as p:
+                    p.cmd.feedback("disable", "all", "everything")
+                    p.cmd.load(pdb, 'toto')
+                    outname = os.path.join(os.path.dirname(pdb), 'temp.pdb')
+                    p.cmd.save(outname, f'toto and ({sel})')
+                    hchain, lchain = sel.split()[1], sel.split()[4]
+                pdb_out = os.path.join(os.path.dirname(pdb), f'docked_{hchain}_{lchain}.pdb')
+            pdb_to_score = pdb if sel is None else outname
+
+            cmd = f'{PHENIX_DOCK_IN_MAP} {pdb_to_score} {mrc} pdb_out={pdb_out} resolution={resolution}'
+            res = subprocess.run(cmd.split(), capture_output=True, timeout=5. * 3600)
+
+            if sel is not None:
+                os.remove(pdb_to_score)
+
+            returncode = res.returncode
+            if returncode > 0:
+                return returncode, res.stderr.decode()
+            stdout = res.stdout.decode()
+            stdout_aslist = list(stdout.splitlines())
+            end_of_list = stdout_aslist[-20:]
+            translation_line = next(line for line in end_of_list if line.startswith('TRANS'))
+            translation_norm = np.linalg.norm(np.array(translation_line.split()[1:]))
+            if translation_norm > 8:
+                return 3, "too big translation"
+            score_line = next(line for line in end_of_list if line.startswith('Wrote placed'))
+            score = float(score_line.split()[8])
+            return res.returncode, score
+        except TimeoutError as e:
+            return 1, e
+        except Exception as e:
+            return 4, e
+
+    def add_docking_score(csv_in, csv_out, datadir_name='../data/pdb_em'):
+        # Prepare input list
+        df = pd.read_csv(csv_in, index_col=0, dtype={'mrc': 'str'})
+        df = df[['pdb', 'Hchain', 'Lchain', 'resolution', 'mrc']]
+        to_process = []
+        for _, row in df.iterrows():
+            pdb, heavy_chain, light_chain, resolution, mrc = row.values
+            pdb = pdb.upper()
+            system_dir = os.path.join(datadir_name, f"{pdb}_{mrc}")
+            pdb_path = os.path.join(system_dir, f"{pdb}.cif")
+            mrc_path = os.path.join(system_dir, f"emd_{mrc}.map.gz")
+            selection = list_id_to_pymol_sel([heavy_chain, light_chain])
+            to_process.append((mrc_path, pdb_path, selection, resolution))
+
+        # Parallel computation
+        l = multiprocessing.Lock()
+        pool = multiprocessing.Pool(processes=24, initializer=init, initargs=(l,), )
+        results = pool.starmap(dock_one, tqdm(to_process, total=len(to_process)))
+
+        all_results = []
+        all_errors = []
+        for i, (return_code, result) in enumerate(results):
+            if return_code == 0:
+                all_results.append(result)
+            else:
+                all_results.append(-return_code)
+                all_errors.append((return_code, result))
+        df['docked_validation_score'] = all_results
+        df.to_csv(csv_out)
+        for x in all_errors:
+            print(x)
+        # 1 Timeout + error from dock in map, 2 mrc loading buggy, 3 big norm, 4 something else
+        # Analysis of errors :
+        # 1 (78)  : Collide but a few timeout and a lot just say they fail to find a good solution
+        # 2 (3)   : Some don't exist anymore in PDB (obsolete) : 7n01, 6mf7
+        # 3 (671) : Very frequent, I count those as a failure for dock in map
+        # 4 (42)  : FileNotFoundError or StopIteration.. mysterious
 
     # VALIDATE AND DOCK
     # pdb = "../data/pdb_em/7LO8_23464/7LO8.cif"
@@ -402,8 +370,41 @@ if __name__ == '__main__':
     # add_validation_score(csv_in=resolution, csv_out=validated)
     # add_docking_score(csv_in=validated, csv_out=docked)
 
-    # FILTER AND SPLIT : we do two splitting, one being on sorted systems by date
-    filter_csv(csv_in=resolution, csv_out=filtered, nano=nanobodies)
-    sort_by_date(csv_in=filtered, csv_out=sorted_filtered)
-    split_csv(csv_file=filtered, out_basename=out_basename, other=other, random=True)
-    split_csv(csv_file=sorted_filtered, out_basename=sorted_out_basename, other=sorted_other)
+if __name__ == '__main__':
+    pass
+
+    for nanobodies in (False,True):
+        if not nanobodies:
+            mapped = '../data/csvs/mapped.csv'
+            resolution = '../data/csvs/resolution.csv'
+            validated = '../data/csvs/validated.csv'
+            docked = '../data/csvs/docked.csv'
+            filtered = '../data/csvs/filtered.csv'
+            out_basename = '../data/csvs/filtered'
+            sorted_filtered = '../data/csvs/sorted_filtered.csv'
+            sorted_out_basename = '../data/csvs/sorted_filtered'
+            other = None
+            sorted_other = None
+        else:
+            mapped = '../data/nano_csvs/mapped.csv'
+            resolution = '../data/nano_csvs/resolution.csv'
+            validated = '../data/nano_csvs/validated.csv'
+            docked = '../data/nano_csvs/docked.csv'
+            filtered = '../data/nano_csvs/filtered.csv'
+            out_basename = '../data/nano_csvs/filtered'
+            other = '../data/csvs/filtered'
+            sorted_filtered = '../data/nano_csvs/sorted_filtered.csv'
+            sorted_out_basename = '../data/nano_csvs/sorted_filtered'
+            sorted_other = '../data/csvs/sorted_filtered'
+
+        # ADD RESOLUTION
+        clean_resolution(csv_in=mapped, csv_out=resolution)
+
+        # DEPRECATED VALIDATION STEPS
+        # deprecated()
+
+        # FILTER AND SPLIT : we do two splitting, one being on sorted systems by date
+        filter_csv(csv_in=resolution, csv_out=filtered, nano=nanobodies)
+        sort_by_date(csv_in=filtered, csv_out=sorted_filtered)
+        split_csv(csv_file=filtered, out_basename=out_basename, other=other, random=True)
+        split_csv(csv_file=sorted_filtered, out_basename=sorted_out_basename, other=sorted_other)
