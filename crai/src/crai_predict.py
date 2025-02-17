@@ -97,9 +97,12 @@ def predict_coords(session, mrc, outname=None, outmrc=None, n_objects=None, thre
     print(f'Done prediction in : {time.time() - t0:.2f}s')
     transforms = output_to_transforms(out, mrc, n_objects=n_objects, thresh=thresh, outmrc=outmrc,
                                       classif_nano=True, default_nano=default_nano, use_pd=use_pd)
-    outnames = transforms_to_pdb_biopython(transforms=transforms, outname=outname, split_pred=split_pred)
-    print('Output saved in ', outnames[0])
-    return outnames
+    if len(transforms) > 0:
+        outnames = transforms_to_pdb_biopython(transforms=transforms, outname=outname, split_pred=split_pred)
+        print('Output saved in ', outnames[0])
+        return outnames
+    print('No antibody predicted')
+    return []
 
 
 def crai(session, density, outName=None, usePD=True, nObjects=None, splitPred=True, fitMap=True, minVal=None):

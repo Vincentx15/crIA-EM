@@ -56,8 +56,10 @@ def nms(pred_loc, n_objects=None, thresh=0.2, use_pd=False):
         sorted_pd = pd[sorter]
         if n_objects is None:
             n_objects = np.sum(lifetimes > thresh)
+            # lifetime of the first hit is always one. Is the associated proba high enough ?
+            if n_objects == 1:
+                n_objects = np.max(pred_loc) > 0.5
         ijk_s = np.int_(sorted_pd[:n_objects, 3:6])
-        # first_ijk_s = np.int_(sorted_pd[:3, 3:6])
     else:
         pred_array = pred_loc.copy()
         ijk_s = []
