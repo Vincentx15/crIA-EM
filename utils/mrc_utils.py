@@ -99,12 +99,16 @@ class MRCGrid:
             os.remove(uncompressed_name)
         return MRCGrid(data=data, voxel_size=voxel_size, origin=origin, normalize_mode=normalize)
 
-    def normalize(self, normalize_mode='max'):
+    def normalize(self, normalize_mode='max', min_val=None):
         """
         :return:
         """
         if normalize_mode is None:
             return self
+
+        # Shift the data by min_val before relu-ing it
+        if min_val is not None:
+            self.data -= float(min_val)
 
         relued = np.maximum(self.data, np.zeros_like(self.data))
         flat = relued.flatten()
