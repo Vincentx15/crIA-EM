@@ -1,5 +1,6 @@
 import os
 import sys
+from functools import partial
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,6 +18,11 @@ from paper.predict_test import string_rep
 from utils.object_detection import pdbsel_to_transforms
 from utils.rotation import rotation_to_supervision
 from paper.paper_utils import plot_failure_rates_smooth
+
+COLORS = {
+    'crai': 'tab:purple',
+    'dockim': 'tab:red',
+}
 
 
 def match_transforms_to_angles_dist(gt_transforms, pred_transforms):
@@ -54,7 +60,7 @@ def match_transforms_to_angles_dist(gt_transforms, pred_transforms):
     return position_dists, p_angles, theta_angles
 
 
-def get_angles_dist_dockim(nano=False, test_path="../data/testset/"):
+def compute_angles_dist_dockim(nano=False, test_path="../data/testset/"):
     pdb_selections = pickle.load(open(os.path.join(test_path, f'pdb_sels{"_nano" if nano else ""}.p'), 'rb'))
     outname_mapping = os.path.join(test_path, f'dockim_chain_map{"_nano" if nano else ""}.p')
     all_pdb_chain_mapping = pickle.load(open(outname_mapping, 'rb'))
@@ -96,17 +102,19 @@ def get_angles_dist_dockim(nano=False, test_path="../data/testset/"):
     pickle.dump(all_res, open(outname_results, 'wb'))
 
 
-def get_angles_dist(nano=False, test_path="../data/testset/", num_setting=False, suffix='', recompute=False):
+def compute_angles_dist(nano=False, test_path="../data/testset/", num_setting=False, suffix='', recompute=False,
+                        outfilename_results=None):
     """
     Go over the predictions and computes the angles and distances for each system.
     :param nano:
     :param test_path:
     :return:
     """
-    outfilename_results = f'angledist{suffix}{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p'
+    if outfilename_results is None:
+        outfilename_results = f'angledist{suffix}{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p'
     outname_results = os.path.join(test_path, outfilename_results)
     if not recompute and os.path.exists(outname_results):
-        return
+        return pickle.load(open(outname_results, 'rb'))
 
     pdb_selections = pickle.load(open(os.path.join(test_path, f'pdb_sels{"_nano" if nano else ""}.p'), 'rb'))
     time_init = time.time()
@@ -143,20 +151,30 @@ def get_angles_dist(nano=False, test_path="../data/testset/", num_setting=False,
         dists, angles_p, angles_theta = match_transforms_to_angles_dist(gt_transforms, pred_transforms)
         all_res[pdb] = dists, angles_p, angles_theta
     pickle.dump(all_res, open(outname_results, 'wb'))
+    return all_res
 
 
-def get_angledist_results():
+def compute_angledist_results():
+    # First precompute angle_dists.p for all vanilla combinations
     for sorted_split in [True, False]:
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
         for nano in [False, True]:
             # Now let us get the prediction in all cases
             print('Doing ', string_rep(sorted_split=sorted_split, nano=nano))
-            get_angles_dist_dockim(nano=nano, test_path=test_path)
+            compute_angles_dist_dockim(nano=nano, test_path=test_path)
             for num_setting in [True, False]:
-                get_angles_dist(nano=nano, test_path=test_path, num_setting=num_setting)
+                compute_angles_dist(nano=nano, test_path=test_path, num_setting=num_setting)
+    # Then for the random split, compute them again for ablations
+    test_path = f'../data/testset_random'
+    compute_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_uy')
+    compute_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_ot')
+    compute_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_pd')
 
 
 def get_distance_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10, verbose=True):
+    """
+    Once precomputed, we just want to load the data
+    """
     if dockim:
         pickle_name_to_get = f'dockim_angledist{"_nano" if nano else ""}.p'
     else:
@@ -340,7 +358,10 @@ def get_angles_one(test_path=None, dockim=False, nano=False, num_setting=False, 
     for pdb, pdb_res in results.items():
         if pdb_res is None:
             continue
-        dists, angles_p, angles_theta = pdb_res
+        try:
+            dists, angles_p, angles_theta = pdb_res
+        except:
+            a = 1
         selector = dists < thresh
         sel_angles_p.extend(list(np.asarray(angles_p)[selector]))
         sel_angles_theta.extend(list(np.asarray(angles_theta)[selector]))
@@ -350,7 +371,7 @@ def get_angles_one(test_path=None, dockim=False, nano=False, num_setting=False, 
     return sel_angles_p
 
 
-def plot_dict_hist(angle_resdict):
+def plot_dict_hist(angle_resdict, colors=None):
     """
     Expected to receive keys as legend and values as lists of values
     :return:
@@ -365,7 +386,10 @@ def plot_dict_hist(angle_resdict):
     for label, angles in angle_resdict.items():
         all_angles.extend(angles)
         all_names.extend([label for _ in range(len(angles))])
-    all_angles = [angle + 1 for angle in all_angles]
+    min_val = 3
+    max_val = 180
+    all_angles = [min(angle, max_val) for angle in all_angles]
+    all_angles = [max(angle, min_val) for angle in all_angles]
     # all_angles = [int(angle) for angle in all_angles]
     # print(all_angles)
     df = pd.DataFrame({'angles': all_angles,
@@ -373,7 +397,8 @@ def plot_dict_hist(angle_resdict):
 
     use_log = True
     if use_log:
-        bins = np.logspace(1, np.log(180) / np.log(10), 10)
+        base = 10
+        bins = np.logspace(np.log(min_val) / np.log(base), np.log(max_val) / np.log(base), 10, base=base)
     else:
         bins = np.linspace(0, 180, 10)
 
@@ -385,7 +410,9 @@ def plot_dict_hist(angle_resdict):
         "bins": bins,
         "common_norm": False,
         # "log_scale": (True, True), # does not work with bins
+        "palette": colors
     }
+    # df = df[df['Model Name'] == r'VHH dockim']
     sns.histplot(data=df, x='angles', hue='Model Name', shrink=.9, **hist_kwargs)
     if use_log:
         ax = plt.gca()
@@ -412,45 +439,41 @@ def plot_dict_hist(angle_resdict):
 
 
 def plot_all():
-    test_path = f'../data/testset_random'
     results = {}
-    get_angles_dist(nano=False, test_path=test_path, num_setting=False)
-    results[r'Fab'] = get_angles_one(nano=False, test_path=test_path, num_setting=False)
+    gao = partial(get_angles_one, test_path=f'../data/testset_random')
+    results[r'Fab CrAI'] = gao(nano=False, num_setting=False)
+    results[r'$\overrightarrow{u_y}$'] = gao(nano=False, num_setting=False, suffix='_uy')
+    results[r'Fab dockim'] = gao(nano=False, dockim=True)
+    colors = {r'Fab CrAI': COLORS["crai"], r'Fab dockim': COLORS["dockim"], r'$\overrightarrow{u_y}$': 'grey'}
+    plot_dict_hist(results, colors=colors)
 
-    get_angles_dist(nano=True, test_path=test_path, num_setting=False)
-    results['nAb'] = get_angles_one(nano=True, test_path=test_path, num_setting=False)
-
-    get_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_uy')
-    results['$\overrightarrow{u_y}$'] = get_angles_one(nano=False, test_path=test_path, num_setting=False, suffix='_uy')
-    plot_dict_hist(results)
+    results = {}
+    results[r'VHH CrAI'] = gao(nano=True, num_setting=False)
+    results[r'VHH dockim'] = gao(nano=True, dockim=True)
+    colors = {r'VHH CrAI': COLORS["crai"], r'VHH dockim': COLORS["dockim"], r'$\overrightarrow{u_y}$': 'grey'}
+    plot_dict_hist(results, colors=colors)
 
 
 def plot_ablation():
-    test_path = f'../data/testset_random'
     results = {}
-    get_angles_dist(nano=False, test_path=test_path, num_setting=False)
-    results['normal'] = get_angles_one(nano=False, test_path=test_path, num_setting=False)
-
-    get_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_ot')
-    results['no_ot'] = get_angles_one(nano=False, test_path=test_path, num_setting=False, suffix='_no_ot')
-
-    get_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_pd')
-    results['no_pd'] = get_angles_one(nano=False, test_path=test_path, num_setting=False, suffix='_no_pd')
-
-    get_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_uy')
-    results['uy'] = get_angles_one(nano=False, test_path=test_path, num_setting=False, suffix='_uy')
+    gao = partial(get_angles_one, test_path=f'../data/testset_random')
+    results['normal'] = gao(nano=False, num_setting=False)
+    results['no_ot'] = gao(nano=False, num_setting=False, suffix='_no_ot')
+    results['no_pd'] = gao(nano=False, num_setting=False, suffix='_no_pd')
+    results['uy'] = gao(nano=False, num_setting=False, suffix='_uy')
     plot_dict_hist(results)
 
 
 if __name__ == '__main__':
     pass
-    # get_distances_all()
+    # compute_angledist_results()
 
     # resolution_plot(dockim=True, num_setting=True)
     # resolution_plot(dockim=False, num_setting=True)
     # resolution_plot(dockim=False, num_setting=False)
-    resolution_plot_both()
+    # resolution_plot_both()
+    # test_path = f'../data/testset_random'
+    # res_new = compute_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_pd', recompute=True)
 
-    # get_angledist_results()
-    # plot_all()
+    plot_all()
     # plot_ablation()
