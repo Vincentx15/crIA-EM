@@ -16,6 +16,7 @@ if __name__ == '__main__':
 from paper.predict_test import string_rep
 from utils.object_detection import pdbsel_to_transforms
 from utils.rotation import rotation_to_supervision
+from paper.paper_utils import plot_failure_rates_smooth
 
 
 def match_transforms_to_angles_dist(gt_transforms, pred_transforms):
@@ -155,7 +156,7 @@ def get_angledist_results():
                 get_angles_dist(nano=nano, test_path=test_path, num_setting=num_setting)
 
 
-def get_distance_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10):
+def get_distance_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10, verbose=True):
     if dockim:
         pickle_name_to_get = f'dockim_angledist{"_nano" if nano else ""}.p'
     else:
@@ -181,17 +182,19 @@ def get_distance_one(test_path=None, dockim=False, nano=False, num_setting=False
         #     print(dockim, nano, num_setting, pdb)
         all_sel_dists.extend(sel_dists)
         all_pdb_dists[pdb] = list(dists)
-    print(f'{np.mean(all_sel_dists):.2f}')
+    if verbose:
+        print(f'{np.mean(all_sel_dists):.2f}')
     return all_sel_dists, all_pdb_dists
 
 
-def get_distances_all():
+def get_distances_all(verbose=True):
     res_dict = {}
     for sorted_split in [True, False]:
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
         for nano in [False, True]:
-            print('Doing ', string_rep(sorted_split=sorted_split, nano=nano))
-            dists = get_distance_one(nano=nano, test_path=test_path, dockim=True, num_setting=True)
+            if verbose:
+                print('Doing ', string_rep(sorted_split=sorted_split, nano=nano))
+            dists = get_distance_one(nano=nano, test_path=test_path, dockim=True, num_setting=True, verbose=verbose)
             res_dict[(True, sorted_split, nano, True)] = dists
             for num_setting in [True, False]:
                 dists = get_distance_one(nano=nano, test_path=test_path, num_setting=num_setting)
@@ -199,11 +202,13 @@ def get_distances_all():
     return res_dict
 
 
-def scatter(proba, distances, alpha=0.3, noise_strength=0.02, fit=True, display_fit=True, colors=None, label=None):
-    # Adding random noise to the data
+def scatter(x, y, alpha=0.3, noise_strength=0.02, fit=True, display_fit=True, colors=None, label=None):
+    x = x.copy()
+    y = y.copy()
 
-    proba += noise_strength * np.random.randn(len(proba))
-    distances += noise_strength * np.random.randn(len(distances))
+    # Adding random noise to the data
+    x += noise_strength * np.random.randn(len(x))
+    y += noise_strength * np.random.randn(len(y))
 
     # Rest of the plot decorations
     plt.rcParams.update({'font.size': 14})
@@ -214,28 +219,28 @@ def scatter(proba, distances, alpha=0.3, noise_strength=0.02, fit=True, display_
     # Plotting the scatter data with transparency
     if colors is None:
         colors = sns.color_palette('colorblind', as_cmap=True)
-    plt.scatter(proba, distances, color=colors[0], marker='o', alpha=alpha)
+    plt.scatter(x, y, color=colors[0], marker='o', alpha=alpha)
 
     if fit:
         # Linear fit
-        m, b = np.polyfit(proba, distances, 1)
-        x = np.linspace(proba.min(), proba.max())
-        plt.plot(x, m * x + b, color=colors[1],label=label)
+        m, b = np.polyfit(x, y, 1)
+        x_plot = np.linspace(x.min(), x.max())
+        plt.plot(x_plot, m * x_plot + b, color=colors[1], label=label)
         # plt.plot(all_probas_bench, m * all_probas_bench + b, color='red', label=f'Linear Fit: y={m:.2f}x+{b:.2f}')
 
         if display_fit:
             # Calculating R^2 score
-            predicted = m * proba + b
+            predicted = m * x + b
             from sklearn.metrics import r2_score
-            r2 = r2_score(distances, predicted)
+            r2 = r2_score(y, predicted)
             plt.text(0.68, 0.86, rf'$y = {m:.2f} x + {b:.2f}$', transform=plt.gca().transAxes)
             plt.text(0.66, 0.8, rf'$R^2 = {r2:.2f}$', transform=plt.gca().transAxes)
 
 
-def resolution_plot(sys=False, num_setting=False, dockim=False):
+def resolution_plot(sys=False, num_setting=False, dockim=False, show=True):
     concatenated_dists = list()
     concatenated_res = list()
-    res_dict = get_distances_all()
+    res_dict = get_distances_all(verbose=False)
     for sorted_split in [True, False]:
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
         for nano in [False, True]:
@@ -243,8 +248,10 @@ def resolution_plot(sys=False, num_setting=False, dockim=False):
             all_pdb_dists = res_dict[(dockim, sorted_split, nano, num_setting)][1]
             for step, ((pdb, mrc, resolution), selections) in enumerate(sorted(pdb_selections.items())):
                 if pdb not in all_pdb_dists:
-                    continue
-                relevant_dists = [x if x < 10 else 10 for x in all_pdb_dists[pdb]]
+                    relevant_dists = [10 for _ in selections]
+                    # continue
+                else:
+                    relevant_dists = [x if x < 10 else 10 for x in all_pdb_dists[pdb]]
                 if sys:
                     concatenated_dists.append(np.mean(relevant_dists))
                     concatenated_res.append(resolution)
@@ -255,33 +262,70 @@ def resolution_plot(sys=False, num_setting=False, dockim=False):
     # print(len(concatenated_res), concatenated_res)
     concatenated_dists = np.asarray(concatenated_dists)
     print(np.sum(concatenated_dists > 9), len(concatenated_dists))
-    scatter(concatenated_res, concatenated_dists, fit=True)
-    plt.xlabel(r'Resolution (\AA{})')
-    plt.ylabel(r'Distance (\AA{})')
-    # plt.legend(loc='lower left')
-    plt.savefig(f'../fig_paper/python/resolution{"_num" if num_setting else ""}{"_dockim" if dockim else ""}.pdf')
-    plt.show()
+    if show:
+        scatter(concatenated_res, concatenated_dists, fit=True)
+        plt.xlabel(r'Resolution (\AA{})')
+        plt.ylabel(r'Distance (\AA{})')
+        # plt.legend(loc='lower left')
+        plt.savefig(f'../fig_paper/python/resolution{"_num" if num_setting else ""}{"_dockim" if dockim else ""}.pdf')
+        plt.show()
     return concatenated_res, concatenated_dists
 
 
-def resolution_plot_both():
-    # res_dockim, dists_dockim = resolution_plot(dockim=True, num_setting=True)
-    # res_num, dists_num = resolution_plot(dockim=False, num_setting=True)
-    # res_thresh, dists_thresh = resolution_plot(dockim=False, num_setting=False)
-    #
-    # pickle.dump((res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh), open('temp.p', 'wb'))
+def resolution_plot_both(sys=True):
+    res_dockim, dists_dockim = resolution_plot(dockim=True, num_setting=True, sys=sys, show=False)
+    res_num, dists_num = resolution_plot(dockim=False, num_setting=True, sys=sys, show=False)
+    res_thresh, dists_thresh = resolution_plot(dockim=False, num_setting=False, sys=sys, show=False)
+    pickle.dump((res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh), open('temp.p', 'wb'))
+
     res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh = pickle.load(open('temp.p', 'rb'))
-    colors = sns.color_palette('Paired', n_colors=6)
 
-    scatter(res_dockim, dists_dockim, colors=['red'] * 2, display_fit=False, label=r'\texttt{dock in map}')
-    # scatter(res_num, dists_num, colors=colors[2:], display_fit=False)
-    scatter(res_thresh, dists_thresh, colors=['darkviolet'] * 2, display_fit=False, label=r'\texttt{CrAI}')
+    arrs = res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh
+    success_dists = []
+    failures = []
+    for res, dist in zip(arrs[::2], arrs[1:][::2]):
+        # Successes
+        idx = np.argwhere(dist < 9.9).flatten()
+        success_res, success_dist = np.asarray(res)[idx], dist[idx]
+        success_dists.extend([success_res, success_dist])
+        # Failures
+        idx = np.argwhere(dist > 9.9).flatten()
+        res_fail = np.asarray(res)[idx]
+        failures.append(res_fail)
 
-    plt.xlabel(r'Resolution (\AA{})')
-    plt.ylabel(r'Distance (\AA{})')
-    plt.legend(loc='center right')
-    plt.savefig(f'../fig_paper/python/resolution_both.pdf')
-    plt.show()
+    scatter_dists = True
+    failure_plot = True
+    # plot distances for success
+    if scatter_dists:
+        res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh = success_dists
+        scatter(res_dockim, dists_dockim, colors=['red'] * 2, display_fit=False, label=r'\texttt{dock in map}')
+        # scatter(res_num, dists_num, colors=['blue], display_fit=False)
+        scatter(res_thresh, dists_thresh, colors=['darkviolet'] * 2, display_fit=False, label=r'\texttt{CrAI}')
+        plt.xlabel(r'Resolution (\AA{})')
+        plt.ylabel(r'Distance (\AA{})')
+        plt.legend(loc='center right')
+        plt.savefig(f'../fig_paper/python/resolution_both_distances{"_sys" if sys else ""}.pdf')
+        plt.show()
+
+    # plot failures
+    if failure_plot:
+        res_dockim_failed, res_num_failed, res_thresh_failed = failures
+        thresh_res = np.concatenate((res_thresh, res_thresh_failed))
+        thresh_success = np.concatenate((np.ones_like(res_thresh), np.zeros_like(res_thresh_failed)))
+        dockim_res = np.concatenate((res_dockim, res_dockim_failed))
+        dockim_success = np.concatenate((np.ones_like(res_dockim), np.zeros_like(res_dockim_failed)))
+        # print(len(thresh_success))
+        # print(len(dockim_success))
+        plot_failure_rates_smooth(dockim_res, dockim_success, color='red', label=r'\texttt{dock in map}')
+        plot_failure_rates_smooth(thresh_res, thresh_success, color='darkviolet', label=r'\texttt{CrAI}')
+        plt.grid(True, linestyle='--', alpha=0.7)
+        plt.xlabel('Resolution (\AA{})')
+        plt.ylabel('Binned Recall')
+        plt.ylim((0.6, 1))
+        # plt.title('Recall Smooth Estimation')
+        plt.legend()
+        plt.savefig(f'../fig_paper/python/resolution_both_recall{"_sys" if sys else ""}.pdf')
+        plt.show()
 
 
 def get_angles_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10):
