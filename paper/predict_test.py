@@ -280,13 +280,15 @@ def compute_all():
             get_systems(csv_in=csv_in, nano=nano, test_path=test_path)
             # Now let us get the prediction in all cases
             print('Making predictions for :', string_rep(nano=nano, mixed=True))
-            make_predictions(nano=nano, test_path=test_path, use_mixed_model=True, gpu=1)
+            make_predictions(nano=nano, test_path=test_path, use_mixed_model=True, gpu=0,
+                             sorted_split=sorted_split)
             get_hit_rates(nano=nano, test_path=test_path)
 
             # No models are dedicated to nano only, for Fabs, use the fab_only model
             if not nano:
                 print('Making predictions for :', string_rep(nano=nano, mixed=False))
-                make_predictions(nano=nano, test_path=test_path, use_mixed_model=False, gpu=1, suffix='_fab')
+                make_predictions(nano=nano, test_path=test_path, use_mixed_model=False, gpu=0,
+                                 sorted_split=sorted_split, suffix='_fab')
                 get_hit_rates(nano=nano, test_path=test_path, suffix='_fab')
 
 
@@ -308,7 +310,7 @@ def compute_ablations():
 
     # Get the no_PD predictions
     print('Making predictions for no pd')
-    make_predictions(nano=False, test_path=test_path, gpu=0, use_pd=False, suffix='_no_pd')
+    make_predictions(nano=False, test_path=test_path, gpu=0, sorted_split=sorted_split, use_pd=False, suffix='_no_pd')
 
     # Get the uy predictions
     print('Making predictions for uy')
@@ -325,7 +327,7 @@ def compute_ablations():
 if __name__ == '__main__':
     pass
     # TODO : understand why n<10 sometimes
-    mwe()
+    # mwe()
 
     # To do one
     # sorted_split = True

@@ -45,7 +45,7 @@ pip install -r requirements.txt
 
 Then, clone the project and go to the root of the project :
 ```shell
-git clone https://github.com/Sanofi-GitHub/crai
+git clone https://github.com/Vincentx15/crIA-EM.git
 cd crIA-EM
 ```
 

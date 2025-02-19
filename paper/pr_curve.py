@@ -113,10 +113,10 @@ def compute_ablations():
     compute_hr(test_path=test_path, nano=False, num_setting=False, suffix='_no_ot')
     print("no_pd")
     compute_hr(test_path=test_path, nano=False, num_setting=True, suffix='_no_pd')
-    compute_hr(test_path=test_path, nano=False, suffix='_no_pd')
+    compute_hr(test_path=test_path, nano=False, num_setting=False, suffix='_no_pd')
     print("uy")
     compute_hr(test_path=test_path, nano=False, num_setting=True, suffix='_uy')
-    compute_hr(test_path=test_path, nano=False, suffix='_uy')
+    compute_hr(test_path=test_path, nano=False, num_setting=False, suffix='_uy')
 
 
 def get_mean_std(hitlist):

@@ -20,25 +20,23 @@ python train_coords.py --sorted -m example_sorted
 
 ### Producing results files
 
-The results files corresponding to dock_in_map are available in the repository data/csvs/ folder.
-They can be produced by running :
+To make predictions using our different models and ablations, please run:
 ```bash
 cd paper
-python benchmark.py
+python predict_test.py
+python dockim_predict_test.py
 ```
 
-To produce results files for a trained model, run :
-```bash
-python relog.py --nano --sorted --thresh --model_name example_sorted_last
-```
+This will produce 10 predictions for each systems with several settings, as well as the ablations for the random fab split.
+In addition, this creates a pickle file that stores how many systems were output by the thresh model, as well as one
+containing lists of len 10 containing the number of GT systems detected if retaining at most k predictions.
 
-This will produce a pickle file containing per systems results.
 
 ### Producing figures
 
 Once such files are produced, you can reproduce the figures of the paper by running 
 ```bash
-cd paper
-python analyze.py
+python get_distances_angles.py
+python pr_curve.py
 ```
 
