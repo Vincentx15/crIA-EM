@@ -26,6 +26,7 @@ def compute_hr(nano=False, test_path='../data/testset', num_setting=False, docki
     num_pred_all = pickle.load(open(num_pred_path, 'rb'))
 
     all_hr = {}
+    all_pos_neg = {}
     overpreds_list = []
     underpreds_list = []
     for pdb, (gt_hits_thresh, hits_thresh, resolution) in sorted(all_res.items()):
@@ -52,6 +53,19 @@ def compute_hr(nano=False, test_path='../data/testset', num_setting=False, docki
         found_hits = hits_thresh[min(num_pred, 10) - 1]
         underpreds = num_gt - found_hits
         errors = overpreds + underpreds
+        # errors = (overpreds + underpreds) / 2
+        # errors = underpreds
+
+        true_positives = found_hits
+        false_negatives = underpreds
+        false_positives = num_pred - found_hits
+
+        # precision = true_positives / (true_positives+ false_positives)
+        # recall = true_positives / (true_positives + false_negatives)
+        # f1 = 2 * true_positives / (2 * true_positives + false_negatives + false_positives)
+        # hr = 1 - errors / num_gt
+        # if f1 > hr:
+        #     a = 1
 
         # PRINT
         if overpreds > 0:
@@ -59,9 +73,9 @@ def compute_hr(nano=False, test_path='../data/testset', num_setting=False, docki
             # Was this overpred useful ? (if found_hits > hits_thresh[num_gt - 1])
             # Actually useful only twice for fabs and twice for nano
             useful = found_hits > hits_thresh[num_gt - 1]
-            print(f'over\t {pdb} num_pred : {num_pred}, num_gt : {num_gt}, found_hits : {found_hits}, '
-                  f'hits with gt_num : {hits_thresh[num_gt - 1]}, raw results : {hits_thresh} '
-                  f'useful overpred : {useful}')
+            # print(f'over\t {pdb} num_pred : {num_pred}, num_gt : {num_gt}, found_hits : {found_hits}, '
+            #       f'hits with gt_num : {hits_thresh[num_gt - 1]}, raw results : {hits_thresh} '
+            #       f'useful overpred : {useful}')
         if underpreds > 0:
             # Would we find it with more hits ?
             # Not so much with Fabs, some are close but further than 10, others are just missed.
@@ -75,15 +89,38 @@ def compute_hr(nano=False, test_path='../data/testset', num_setting=False, docki
         # if overpreds > 0 and underpreds > 0:
         #     print(pdb, 'winner !')
         all_hr[pdb] = (errors, num_gt)
-    print('Overpredictions : ', len(overpreds_list), sum([x[1] for x in overpreds_list]), overpreds_list)
-    print('Underpredictions : ', len(underpreds_list), sum([x[1] for x in underpreds_list]), underpreds_list)
+        all_pos_neg[pdb] = (true_positives, false_negatives, false_positives)
+
+    # print('Overpredictions : ', len(overpreds_list), sum([x[1] for x in overpreds_list]), overpreds_list)
+    # print('Underpredictions : ', len(underpreds_list), sum([x[1] for x in underpreds_list]), underpreds_list)
     failed_sys = [x[0] for x in overpreds_list + underpreds_list]
 
-    hit_rate_sys = np.mean([100 * (1 - errors / num_gt) for errors, num_gt in all_hr.values()])
-    hit_rate_ab = 100 * (1 - np.sum([errors for errors, _ in all_hr.values()]) / np.sum(
-        [num_gt for _, num_gt in all_hr.values()]))
-    print(f"{hit_rate_sys:.1f}")
-    print(f"{hit_rate_ab:.1f}")
+    # hit_rate_sys = np.mean([100 * (1 - errors / num_gt) for errors, num_gt in all_hr.values()])
+    # hit_rate_ab = 100 * (1 - np.sum([errors for errors, _ in all_hr.values()]) / np.sum(
+    #     [num_gt for _, num_gt in all_hr.values()]))
+    # print(f"{hit_rate_sys:.1f}")
+    # print(f"{hit_rate_ab:.1f}")
+    #
+    # # recall
+    # recall_sys = np.mean([tp / (tp + fn) for tp, fn, fp in all_pos_neg.values()]) * 100
+    # recall_ab = np.sum([tp for tp, _, _ in all_pos_neg.values()]) / np.sum(
+    #     [(tp + fn) for tp, fn, _ in all_pos_neg.values()]) * 100
+    # print(f"{recall_sys:.1f}")
+    # print(f"{recall_ab:.1f}")
+
+    # precision
+    # precision_sys = np.mean([tp / (tp + fp) for tp, fn, fp in all_pos_neg.values()]) * 100
+    # precision_ab = np.sum([tp for tp, _, _ in all_pos_neg.values()]) / np.sum(
+    #     [(tp + fp) for tp, _, fp in all_pos_neg.values()]) * 100
+    # print(f"{precision_sys:.1f}")
+    # print(f"{precision_ab:.1f}")
+
+    # f1
+    f1_sys = np.mean([2 * tp / (2 * tp + fp + fn) for tp, fn, fp in all_pos_neg.values()]) * 100
+    f1_ab = np.sum([2 * tp for tp, fn, fn in all_pos_neg.values()]) / np.sum(
+        [(2 * tp + fp + fn) for tp, fn, fp in all_pos_neg.values()]) * 100
+    print(f"{f1_sys:.1f}")
+    print(f"{f1_ab:.1f}")
     return overpreds_list + underpreds_list
 
 
@@ -100,10 +137,10 @@ def compute_all():
                                                      nano=nano,
                                                      num=num_setting))
                 compute_hr(test_path=test_path, nano=nano, num_setting=num_setting)
-                # no specific nano model
-                if not nano:
-                    print('non mixed')
-                    compute_hr(test_path=test_path, nano=nano, num_setting=num_setting, suffix='_fab')
+                # no nano model
+                # if not nano:
+                #     print('non mixed')
+                #     compute_hr(test_path=test_path, nano=nano, num_setting=num_setting, suffix='_fab')
 
 
 def compute_ablations():
@@ -225,13 +262,13 @@ if __name__ == '__main__':
     # TO COMPUTE ONE
     test_path = f'../data/testset'
     # test_path = f'../data/testset_random'
-    compute_hr(test_path=test_path, nano=False, num_setting=False)
-    print("nano")
-    compute_hr(test_path=test_path, nano=True, num_setting=False)
+    # compute_hr(test_path=test_path, nano=False, num_setting=True)
+    # print("nano")
+    # compute_hr(test_path=test_path, nano=True, num_setting=False)
     # compute_hr(test_path=test_path, nano=True, use_mixed_model=True, num_setting=True, dockim=True)
 
     # # TO COMPUTE ALL
-    # compute_all()
+    compute_all()
 
     # # TO COMPUTE ABLATIONS
     # compute_ablations()

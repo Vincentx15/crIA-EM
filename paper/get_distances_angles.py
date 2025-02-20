@@ -316,9 +316,10 @@ def resolution_plot_both(sys=True):
     # plot distances for success
     if scatter_dists:
         res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh = success_dists
-        scatter(res_dockim, dists_dockim, colors=['red'] * 2, display_fit=False, label=r'\texttt{dock in map}')
         # scatter(res_num, dists_num, colors=['blue], display_fit=False)
-        scatter(res_thresh, dists_thresh, colors=['darkviolet'] * 2, display_fit=False, label=r'\texttt{CrAI}')
+        scatter(res_thresh, dists_thresh, colors=[COLORS["crai"]] * 2, display_fit=False, label=r'\texttt{CrAI}')
+        scatter(res_dockim, dists_dockim, colors=[COLORS["dockim"]] * 2, display_fit=False,
+                label=r'\texttt{dock in map}')
         plt.xlabel(r'Resolution (\AA{})')
         plt.ylabel(r'Distance (\AA{})')
         plt.legend(loc='center right')
@@ -334,8 +335,8 @@ def resolution_plot_both(sys=True):
         dockim_success = np.concatenate((np.ones_like(res_dockim), np.zeros_like(res_dockim_failed)))
         # print(len(thresh_success))
         # print(len(dockim_success))
-        plot_failure_rates_smooth(dockim_res, dockim_success, color='red', label=r'\texttt{dock in map}')
-        plot_failure_rates_smooth(thresh_res, thresh_success, color='darkviolet', label=r'\texttt{CrAI}')
+        plot_failure_rates_smooth(thresh_res, thresh_success, color=COLORS["crai"], label=r'\texttt{CrAI}')
+        plot_failure_rates_smooth(dockim_res, dockim_success, color=COLORS["dockim"], label=r'\texttt{dock in map}')
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.xlabel('Resolution (\AA{})')
         plt.ylabel('Binned Recall')
@@ -371,7 +372,7 @@ def get_angles_one(test_path=None, dockim=False, nano=False, num_setting=False, 
     return sel_angles_p
 
 
-def plot_dict_hist(angle_resdict, colors=None):
+def plot_dict_hist(angle_resdict, colors=None, outname=None):
     """
     Expected to receive keys as legend and values as lists of values
     :return:
@@ -434,7 +435,8 @@ def plot_dict_hist(angle_resdict, colors=None):
     plt.grid(True)
     plt.xlabel(rf'Angle difference ($^\circ$)')
     plt.ylabel(rf'Percent')
-    plt.savefig(f'../fig_paper/python/angles.pdf')
+    outname = "angles" if outname is None else outname
+    plt.savefig(f'../fig_paper/python/{outname}.pdf')
     plt.show()
 
 
@@ -445,13 +447,13 @@ def plot_all():
     results[r'$\overrightarrow{u_y}$'] = gao(nano=False, num_setting=False, suffix='_uy')
     results[r'Fab dockim'] = gao(nano=False, dockim=True)
     colors = {r'Fab CrAI': COLORS["crai"], r'Fab dockim': COLORS["dockim"], r'$\overrightarrow{u_y}$': 'grey'}
-    plot_dict_hist(results, colors=colors)
+    plot_dict_hist(results, colors=colors, outname="angles_fab")
 
     results = {}
     results[r'VHH CrAI'] = gao(nano=True, num_setting=False)
     results[r'VHH dockim'] = gao(nano=True, dockim=True)
     colors = {r'VHH CrAI': COLORS["crai"], r'VHH dockim': COLORS["dockim"], r'$\overrightarrow{u_y}$': 'grey'}
-    plot_dict_hist(results, colors=colors)
+    plot_dict_hist(results, colors=colors, outname="angles_nab")
 
 
 def plot_ablation():
@@ -472,8 +474,6 @@ if __name__ == '__main__':
     # resolution_plot(dockim=False, num_setting=True)
     # resolution_plot(dockim=False, num_setting=False)
     # resolution_plot_both()
-    # test_path = f'../data/testset_random'
-    # res_new = compute_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_pd', recompute=True)
 
-    plot_all()
+    # plot_all()
     # plot_ablation()

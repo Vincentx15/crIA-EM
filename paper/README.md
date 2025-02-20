@@ -1,4 +1,3 @@
-
 ## Initial analyse
 By running `relog.py`, we obtain a pickle file whose name depends on the exact modalities used to get the results.
 For instance, it includes the model used, nano, sorted and a suffix based on the thresholding method used.
