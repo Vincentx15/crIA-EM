@@ -100,6 +100,7 @@ def get_rmsd_pymol(path1, path2, sel1=None, sel2=None):
         rmsd = np.sqrt(np.mean(diff_squared))
         return rmsd
 
+
 def compute_angles_dist_dockim(nano=False, test_path="../data/testset/", recompute=False):
     outname_results = os.path.join(test_path, f'dockim_angledist{"_nano" if nano else ""}.p')
     if os.path.exists(outname_results) and not recompute:
@@ -137,7 +138,16 @@ def compute_angles_dist_dockim(nano=False, test_path="../data/testset/", recompu
                 continue
             pred_transforms = pdbsel_to_transforms(out_name, antibody_selections=pymol_chain_sels, cache=False)
             dists, angles_p, angles_theta, matching = match_transforms_to_angles_dist(gt_transforms, pred_transforms)
-            all_res[pdb] = dists, angles_p, angles_theta
+
+            # Now compute RMSD for each match
+            rmsds = []
+            for pred_id, gt_id in matching:
+                pred_sel = pymol_chain_sels[pred_id]
+                pymol_sel_gt = selections[gt_id]
+                rmsd = get_rmsd_pymol(path1=out_name, path2=gt_name, sel1=pred_sel, sel2=pymol_sel_gt)
+                rmsds.append(rmsd)
+
+            all_res[pdb] = dists, angles_p, angles_theta, rmsds
         except Exception as e:
             print('failed on pdb : ', pdb)
             all_res[pdb] = None
@@ -209,24 +219,25 @@ def compute_angles_dist(nano=False, test_path="../data/testset/", num_setting=Fa
     return all_res
 
 
-def compute_angledist_results():
+def compute_angledist_results(recompute=False):
+    compute_angles_dist_partial = partial(compute_angles_dist, recompute=recompute)
     # First precompute angle_dists.p for all vanilla combinations
     for sorted_split in [True, False]:
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
         for nano in [False, True]:
             # Now let us get the prediction in all cases
             print('Doing ', string_rep(sorted_split=sorted_split, nano=nano))
-            compute_angles_dist_dockim(nano=nano, test_path=test_path)
+            compute_angles_dist_dockim(nano=nano, test_path=test_path, recompute=recompute)
             for num_setting in [True, False]:
                 for fitmap in (True, False):
-                    compute_angles_dist(nano=nano, test_path=test_path, num_setting=num_setting, fitmap=fitmap)
+                    compute_angles_dist_partial(nano=nano, test_path=test_path, num_setting=num_setting, fitmap=fitmap)
     # Then for the random split, compute them again for ablations
     test_path = f'../data/testset_random'
     print("Doing ablations")
     for fitmap in True, False:
-        compute_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_uy', fitmap=fitmap)
-        compute_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_ot', fitmap=fitmap)
-        compute_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_pd', fitmap=fitmap)
+        compute_angles_dist_partial(nano=False, test_path=test_path, num_setting=False, suffix='_uy', fitmap=fitmap)
+        compute_angles_dist_partial(nano=False, test_path=test_path, num_setting=False, suffix='_no_ot', fitmap=fitmap)
+        compute_angles_dist_partial(nano=False, test_path=test_path, num_setting=False, suffix='_no_pd', fitmap=fitmap)
 
 
 def get_distance_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10, verbose=True,
@@ -433,11 +444,7 @@ def get_angles_one(test_path=None, dockim=False, nano=False, num_setting=False, 
     for pdb, pdb_res in results.items():
         if pdb_res is None:
             continue
-        dists, angles_p, angles_theta = pdb_res
-        try:
-            dists, angles_p, angles_theta = pdb_res
-        except:
-            a = 1
+        dists, angles_p, angles_theta, _ = pdb_res
         selector = dists < thresh
         sel_angles_p.extend(list(np.asarray(angles_p)[selector]))
         sel_angles_theta.extend(list(np.asarray(angles_theta)[selector]))
@@ -561,14 +568,15 @@ def plot_ablation():
 if __name__ == '__main__':
     pass
     test_path = f'../data/testset_random'
-    compute_angles_dist(nano=True, test_path=test_path, num_setting=False, recompute=True)
+    # compute_angles_dist(nano=True, test_path=test_path, num_setting=False, recompute=True)
+    # compute_angles_dist_dockim(nano=True, test_path=test_path, recompute=True)
 
-    # compute_angledist_results()
+    # compute_angledist_results(recompute=True)
 
     # resolution_plot(dockim=True, num_setting=True)
     # resolution_plot(dockim=False, num_setting=True)
     # resolution_plot(dockim=False, num_setting=False)
     # resolution_plot_both(sys=True)
 
-    # plot_all()
+    plot_all()
     # plot_ablation()
