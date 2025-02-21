@@ -240,8 +240,8 @@ def compute_angledist_results(recompute=False):
         compute_angles_dist_partial(nano=False, test_path=test_path, num_setting=False, suffix='_no_pd', fitmap=fitmap)
 
 
-def get_distance_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10, verbose=True,
-                     fitmap=False):
+def get_distance_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', verbose=True,
+                     fitmap=False, use_rmsds=False):
     """
     Once precomputed, we just want to load the data
     """
@@ -261,32 +261,35 @@ def get_distance_one(test_path=None, dockim=False, nano=False, num_setting=False
         pdb_res = results[pdb]
         if pdb_res is None:
             continue
-        dists, *_ = pdb_res
+        dists, angles_p, angles_theta, rmsds = pdb_res
         # expand dists with underpreds
-        dists = np.array(list(dists) + [10 for _ in range(gt_num - len(dists))])
-
-        sel_dists = dists[dists < thresh]
-        # if sum(dists > thresh) > 0:
-        #     print(dockim, nano, num_setting, pdb)
+        underpreds = gt_num - len(dists)
+        dists = np.array(list(dists) + [10 for _ in range(underpreds)])
+        if use_rmsds:
+            rmsds = np.array(list(rmsds) + [100 for _ in range(underpreds)])
+            sel_dists = rmsds[dists < 10]
+        else:
+            sel_dists = dists[dists < 10]
+        all_pdb_dists[pdb] = list(dists), list(sel_dists)
         all_sel_dists.extend(sel_dists)
-        all_pdb_dists[pdb] = list(dists)
     if verbose:
         print(f'{np.mean(all_sel_dists):.2f}')
-    return all_sel_dists, all_pdb_dists
+    return all_pdb_dists
 
 
-def get_distances_all(verbose=True, fitmap=False):
+def get_distances_all(verbose=True, fitmap=False, use_rmsds=False):
     res_dict = {}
     for sorted_split in [True, False]:
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
         for nano in [False, True]:
             if verbose:
                 print('Doing ', string_rep(sorted_split=sorted_split, nano=nano))
-            dists = get_distance_one(nano=nano, test_path=test_path, dockim=True, num_setting=True, verbose=verbose)
+            dists = get_distance_one(nano=nano, test_path=test_path, dockim=True, num_setting=True, verbose=verbose,
+                                     use_rmsds=use_rmsds)
             res_dict[(True, sorted_split, nano, True)] = dists
             for num_setting in [True, False]:
                 dists = get_distance_one(nano=nano, test_path=test_path, num_setting=num_setting, fitmap=fitmap,
-                                         verbose=verbose)
+                                         verbose=verbose, use_rmsds=use_rmsds)
                 res_dict[(False, sorted_split, nano, num_setting)] = dists
     return res_dict
 
@@ -326,23 +329,24 @@ def scatter(x, y, alpha=0.3, noise_strength=0.02, fit=True, display_fit=True, co
             plt.text(0.66, 0.8, rf'$R^2 = {r2:.2f}$', transform=plt.gca().transAxes)
 
 
-def resolution_plot(sys=False, num_setting=False, dockim=False, show=True, fitmap=False):
+def resolution_plot(sys=False, num_setting=False, dockim=False, show=True, fitmap=False, use_rmsds=False):
     concatenated_dists = list()
     concatenated_res = list()
-    res_dict = get_distances_all(verbose=False, fitmap=fitmap)
+    res_dict = get_distances_all(verbose=False, fitmap=fitmap, use_rmsds=use_rmsds)
     for sorted_split in [True, False]:
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
         for nano in [False, True]:
             split_dists = []
             pdb_selections = pickle.load(open(os.path.join(test_path, f'pdb_sels{"_nano" if nano else ""}.p'), 'rb'))
-            all_pdb_dists = res_dict[(dockim, sorted_split, nano, num_setting)][1]
+            all_pdb_dists = res_dict[(dockim, sorted_split, nano, num_setting)]
             for step, ((pdb, mrc, resolution), selections) in enumerate(sorted(pdb_selections.items())):
                 if pdb not in all_pdb_dists:
-                    relevant_dists = [10 for _ in selections]
+                    relevant_dists = [30 if use_rmsds else 10 for _ in selections]
+                    selected_dists = []
                     # continue
                 else:
-                    relevant_dists = [x if x < 10 else 10 for x in all_pdb_dists[pdb]]
-                selected_dists = [x for x in relevant_dists if x < 10]
+                    all_dists, selected_dists = all_pdb_dists[pdb]
+                    relevant_dists = [x if x < 10 else 10 for x in all_dists]
                 if sys:
                     if len(selected_dists):
                         split_dists.append(np.mean(selected_dists))
@@ -367,12 +371,13 @@ def resolution_plot(sys=False, num_setting=False, dockim=False, show=True, fitma
     return concatenated_res, concatenated_dists
 
 
-def resolution_plot_both(sys=True):
-    res_dockim, dists_dockim = resolution_plot(dockim=True, num_setting=True, sys=sys, show=False)
-    res_num, dists_num = resolution_plot(dockim=False, num_setting=True, sys=sys, show=False, fitmap=False)
-    res_num_fm, dists_num_fm = resolution_plot(dockim=False, num_setting=True, sys=sys, show=False, fitmap=True)
-    res_thresh, dists_thresh = resolution_plot(dockim=False, num_setting=False, sys=sys, show=False, fitmap=False)
-    res_thresh_fm, dists_thresh_fm = resolution_plot(dockim=False, num_setting=False, sys=sys, show=False, fitmap=True)
+def resolution_plot_both(sys=True, use_rmsds=False):
+    res_plot = partial(resolution_plot, sys=sys, show=False, use_rmsds=use_rmsds)
+    res_dockim, dists_dockim = res_plot(dockim=True, num_setting=True)
+    res_num, dists_num = res_plot(dockim=False, num_setting=True, fitmap=False)
+    res_num_fm, dists_num_fm = res_plot(dockim=False, num_setting=True, fitmap=True)
+    res_thresh, dists_thresh = res_plot(dockim=False, num_setting=False, fitmap=False)
+    res_thresh_fm, dists_thresh_fm = res_plot(dockim=False, num_setting=False, fitmap=True)
 
     # pickle.dump((res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh), open('temp.p', 'wb'))
     # res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh = pickle.load(open('temp.p', 'rb'))
@@ -576,7 +581,7 @@ if __name__ == '__main__':
     # resolution_plot(dockim=True, num_setting=True)
     # resolution_plot(dockim=False, num_setting=True)
     # resolution_plot(dockim=False, num_setting=False)
-    # resolution_plot_both(sys=True)
+    resolution_plot_both(sys=False, use_rmsds=True)
 
-    plot_all()
+    # plot_all()
     # plot_ablation()
