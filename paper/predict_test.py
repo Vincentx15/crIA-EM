@@ -43,12 +43,7 @@ def mwe():
 def get_pdbsels(csv_in='../data/csvs/sorted_filtered_test.csv',
                 out_name=None):
     """
-    The goal is to organize the test set in a clean repo with only necessary files
-    :param csv_in:
-    :param pdb_em_path:
-    :param test_path:
-    :param nano:
-    :return:
+    Get target PDBs within a csv test set
     """
     # group mrc by pdb
     df = pd.read_csv(csv_in, index_col=0, dtype={'mrc': 'str'})
@@ -68,6 +63,10 @@ def get_systems(csv_in='../data/csvs/sorted_filtered_test.csv',
                 pdb_em_path="../data/pdb_em/",
                 test_path="../data/testset/",
                 nano=False):
+    """
+    The goal is to organize the test set in a clean repo with only necessary files:
+    This results in gt_fv_{i}.pdb and gt_nano_{i}.pdb files with extractions
+    """
     os.makedirs(test_path, exist_ok=True)
     out_name_pdbsels = os.path.join(test_path, f'pdb_sels{"_nano" if nano else ""}.p')
     pdb_selections = get_pdbsels(csv_in=csv_in, out_name=out_name_pdbsels)
@@ -197,7 +196,7 @@ def compute_matching_hungarian(actual_pos, pred_pos, thresh=10):
     return gt_found
 
 
-def get_hit_rates(nano=False, test_path="../data/testset/", suffix=''):
+def get_hit_rates(nano=False, test_path="../data/testset/", suffix='', fitmap=False):
     """
     Go over the predictions and computes the hit rates with each number of systems.
     :param nano:
@@ -232,7 +231,8 @@ def get_hit_rates(nano=False, test_path="../data/testset/", suffix=''):
             predicted_com = []
             for i in range(10):
                 # for i in range(len(selections)):
-                out_name = os.path.join(pdb_dir, f'crai_pred{suffix}{"_nano" if nano else ""}_{i}.pdb')
+                file_name = f'{"fitmap_" if fitmap else ""}crai_pred{suffix}{"_nano" if nano else ""}_{i}.pdb'
+                out_name = os.path.join(pdb_dir, file_name)
                 if not os.path.exists(out_name):
                     # Not sure why but sometimes fail to produce 10 systems.
                     # Still gets 5-6 for small systems. Maybe the grid is too small.
@@ -248,11 +248,11 @@ def get_hit_rates(nano=False, test_path="../data/testset/", suffix=''):
             hits_thresh = compute_matching_hungarian(gt_com, predicted_com)
             gt_hits_thresh = list(range(1, len(gt_com) + 1)) + [len(gt_com)] * (len(predicted_com) - len(gt_com))
             all_res[pdb] = (gt_hits_thresh, hits_thresh, resolution)
-    outname = os.path.join(test_path, f'all_res{suffix}{"_nano" if nano else ""}.p')
+    outname = os.path.join(test_path, f'{"fitmap_" if fitmap else ""}all_res{suffix}{"_nano" if nano else ""}.p')
     pickle.dump(all_res, open(outname, 'wb'))
 
 
-def string_rep(sorted_split=None, nano=None, mixed=None, num=None, dockim=None):
+def string_rep(sorted_split=None, nano=None, mixed=None, num=None, dockim=None, fitmap=None):
     s = ""
     if sorted_split is not None:
         s += 'Sorted ' if sorted_split else 'Random '
@@ -264,6 +264,8 @@ def string_rep(sorted_split=None, nano=None, mixed=None, num=None, dockim=None):
         s += 'Num' if num else 'Thresh '
     if dockim is not None:
         s += 'Dockim ' if dockim else ''
+    if fitmap is not None:
+        s += 'Fitmap ' if fitmap else ''
     return s
 
 
@@ -310,7 +312,7 @@ def compute_ablations():
 
     # Get the no_PD predictions
     print('Making predictions for no pd')
-    make_predictions(nano=False, test_path=test_path, gpu=0, sorted_split=sorted_split, use_pd=False, suffix='_no_pd')
+    make_predictions(nano=False, test_path=test_path, gpu=0, sorted_split=False, use_pd=False, suffix='_no_pd')
 
     # Get the uy predictions
     print('Making predictions for uy')

@@ -21,6 +21,7 @@ from paper.paper_utils import plot_failure_rates_smooth
 
 COLORS = {
     'crai': 'tab:purple',
+    'crai_fitmap': 'tab:blue',
     'dockim': 'tab:red',
 }
 
@@ -60,7 +61,10 @@ def match_transforms_to_angles_dist(gt_transforms, pred_transforms):
     return position_dists, p_angles, theta_angles
 
 
-def compute_angles_dist_dockim(nano=False, test_path="../data/testset/"):
+def compute_angles_dist_dockim(nano=False, test_path="../data/testset/", recompute=False):
+    outname_results = os.path.join(test_path, f'dockim_angledist{"_nano" if nano else ""}.p')
+    if os.path.exists(outname_results) and not recompute:
+        return
     pdb_selections = pickle.load(open(os.path.join(test_path, f'pdb_sels{"_nano" if nano else ""}.p'), 'rb'))
     outname_mapping = os.path.join(test_path, f'dockim_chain_map{"_nano" if nano else ""}.p')
     all_pdb_chain_mapping = pickle.load(open(outname_mapping, 'rb'))
@@ -98,12 +102,11 @@ def compute_angles_dist_dockim(nano=False, test_path="../data/testset/"):
         except Exception as e:
             print('failed on pdb : ', pdb)
             all_res[pdb] = None
-    outname_results = os.path.join(test_path, f'dockim_angledist{"_nano" if nano else ""}.p')
     pickle.dump(all_res, open(outname_results, 'wb'))
 
 
 def compute_angles_dist(nano=False, test_path="../data/testset/", num_setting=False, suffix='', recompute=False,
-                        outfilename_results=None):
+                        outfilename_results=None, fitmap=False):
     """
     Go over the predictions and computes the angles and distances for each system.
     :param nano:
@@ -111,7 +114,7 @@ def compute_angles_dist(nano=False, test_path="../data/testset/", num_setting=Fa
     :return:
     """
     if outfilename_results is None:
-        outfilename_results = f'angledist{suffix}{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p'
+        outfilename_results = f'{"fitmap_" if fitmap else ""}angledist{suffix}{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p'
     outname_results = os.path.join(test_path, outfilename_results)
     if not recompute and os.path.exists(outname_results):
         return pickle.load(open(outname_results, 'rb'))
@@ -139,7 +142,8 @@ def compute_angles_dist(nano=False, test_path="../data/testset/", num_setting=Fa
         # Now get the (sorted) list of predicted com
         pred_transforms = []
         for i in range(num_pred):
-            pred_name = os.path.join(pdb_dir, f'crai_pred{suffix}{"_nano" if nano else ""}_{i}.pdb')
+            file_name = f'{"fitmap_" if fitmap else ""}crai_pred{suffix}{"_nano" if nano else ""}_{i}.pdb'
+            pred_name = os.path.join(pdb_dir, file_name)
             if not os.path.exists(pred_name):
                 continue
             dummy_sel = "polymer.protein and polymer.protein"
@@ -163,22 +167,26 @@ def compute_angledist_results():
             print('Doing ', string_rep(sorted_split=sorted_split, nano=nano))
             compute_angles_dist_dockim(nano=nano, test_path=test_path)
             for num_setting in [True, False]:
-                compute_angles_dist(nano=nano, test_path=test_path, num_setting=num_setting)
+                for fitmap in (True, False):
+                    compute_angles_dist(nano=nano, test_path=test_path, num_setting=num_setting, fitmap=fitmap)
     # Then for the random split, compute them again for ablations
     test_path = f'../data/testset_random'
-    compute_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_uy')
-    compute_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_ot')
-    compute_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_pd')
+    print("Doing ablations")
+    for fitmap in True, False:
+        compute_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_uy', fitmap=fitmap)
+        compute_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_ot', fitmap=fitmap)
+        compute_angles_dist(nano=False, test_path=test_path, num_setting=False, suffix='_no_pd', fitmap=fitmap)
 
 
-def get_distance_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10, verbose=True):
+def get_distance_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10, verbose=True,
+                     fitmap=False):
     """
     Once precomputed, we just want to load the data
     """
     if dockim:
         pickle_name_to_get = f'dockim_angledist{"_nano" if nano else ""}.p'
     else:
-        pickle_name_to_get = f'angledist{suffix}{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p'
+        pickle_name_to_get = f'{"fitmap_" if fitmap else ""}angledist{suffix}{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p'
     outname_results = os.path.join(test_path, pickle_name_to_get)
     results = pickle.load(open(outname_results, 'rb'))
 
@@ -205,7 +213,7 @@ def get_distance_one(test_path=None, dockim=False, nano=False, num_setting=False
     return all_sel_dists, all_pdb_dists
 
 
-def get_distances_all(verbose=True):
+def get_distances_all(verbose=True, fitmap=False):
     res_dict = {}
     for sorted_split in [True, False]:
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
@@ -215,7 +223,8 @@ def get_distances_all(verbose=True):
             dists = get_distance_one(nano=nano, test_path=test_path, dockim=True, num_setting=True, verbose=verbose)
             res_dict[(True, sorted_split, nano, True)] = dists
             for num_setting in [True, False]:
-                dists = get_distance_one(nano=nano, test_path=test_path, num_setting=num_setting)
+                dists = get_distance_one(nano=nano, test_path=test_path, num_setting=num_setting, fitmap=fitmap,
+                                         verbose=verbose)
                 res_dict[(False, sorted_split, nano, num_setting)] = dists
     return res_dict
 
@@ -255,13 +264,14 @@ def scatter(x, y, alpha=0.3, noise_strength=0.02, fit=True, display_fit=True, co
             plt.text(0.66, 0.8, rf'$R^2 = {r2:.2f}$', transform=plt.gca().transAxes)
 
 
-def resolution_plot(sys=False, num_setting=False, dockim=False, show=True):
+def resolution_plot(sys=False, num_setting=False, dockim=False, show=True, fitmap=False):
     concatenated_dists = list()
     concatenated_res = list()
-    res_dict = get_distances_all(verbose=False)
+    res_dict = get_distances_all(verbose=False, fitmap=fitmap)
     for sorted_split in [True, False]:
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
         for nano in [False, True]:
+            split_dists = []
             pdb_selections = pickle.load(open(os.path.join(test_path, f'pdb_sels{"_nano" if nano else ""}.p'), 'rb'))
             all_pdb_dists = res_dict[(dockim, sorted_split, nano, num_setting)][1]
             for step, ((pdb, mrc, resolution), selections) in enumerate(sorted(pdb_selections.items())):
@@ -270,16 +280,21 @@ def resolution_plot(sys=False, num_setting=False, dockim=False, show=True):
                     # continue
                 else:
                     relevant_dists = [x if x < 10 else 10 for x in all_pdb_dists[pdb]]
+                selected_dists = [x for x in relevant_dists if x < 10]
                 if sys:
+                    if len(selected_dists):
+                        split_dists.append(np.mean(selected_dists))
                     concatenated_dists.append(np.mean(relevant_dists))
                     concatenated_res.append(resolution)
                 else:
+                    split_dists.extend(selected_dists)
                     concatenated_dists.extend(relevant_dists)
                     concatenated_res.extend([resolution for _ in relevant_dists])
+            print('Dists: ', string_rep(sorted_split=sorted_split, nano=nano), f"{np.mean(split_dists):.2f}")
     # print(len(concatenated_dists), concatenated_dists)
     # print(len(concatenated_res), concatenated_res)
     concatenated_dists = np.asarray(concatenated_dists)
-    print(np.sum(concatenated_dists > 9), len(concatenated_dists))
+    # print(np.sum(concatenated_dists > 9), len(concatenated_dists))
     if show:
         scatter(concatenated_res, concatenated_dists, fit=True)
         plt.xlabel(r'Resolution (\AA{})')
@@ -292,13 +307,15 @@ def resolution_plot(sys=False, num_setting=False, dockim=False, show=True):
 
 def resolution_plot_both(sys=True):
     res_dockim, dists_dockim = resolution_plot(dockim=True, num_setting=True, sys=sys, show=False)
-    res_num, dists_num = resolution_plot(dockim=False, num_setting=True, sys=sys, show=False)
-    res_thresh, dists_thresh = resolution_plot(dockim=False, num_setting=False, sys=sys, show=False)
-    pickle.dump((res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh), open('temp.p', 'wb'))
+    res_num, dists_num = resolution_plot(dockim=False, num_setting=True, sys=sys, show=False, fitmap=False)
+    res_num_fm, dists_num_fm = resolution_plot(dockim=False, num_setting=True, sys=sys, show=False, fitmap=True)
+    res_thresh, dists_thresh = resolution_plot(dockim=False, num_setting=False, sys=sys, show=False, fitmap=False)
+    res_thresh_fm, dists_thresh_fm = resolution_plot(dockim=False, num_setting=False, sys=sys, show=False, fitmap=True)
 
-    res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh = pickle.load(open('temp.p', 'rb'))
+    # pickle.dump((res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh), open('temp.p', 'wb'))
+    # res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh = pickle.load(open('temp.p', 'rb'))
 
-    arrs = res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh
+    arrs = res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh, res_thresh_fm, dists_thresh_fm
     success_dists = []
     failures = []
     for res, dist in zip(arrs[::2], arrs[1:][::2]):
@@ -315,9 +332,11 @@ def resolution_plot_both(sys=True):
     failure_plot = True
     # plot distances for success
     if scatter_dists:
-        res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh = success_dists
+        res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh, res_thresh_fm, dists_thresh_fm = success_dists
         # scatter(res_num, dists_num, colors=['blue], display_fit=False)
         scatter(res_thresh, dists_thresh, colors=[COLORS["crai"]] * 2, display_fit=False, label=r'\texttt{CrAI}')
+        scatter(res_thresh_fm, dists_thresh_fm, colors=[COLORS["crai_fitmap"]] * 2, display_fit=False,
+                label=r'\texttt{CrAI FitMap}')
         scatter(res_dockim, dists_dockim, colors=[COLORS["dockim"]] * 2, display_fit=False,
                 label=r'\texttt{dock in map}')
         plt.xlabel(r'Resolution (\AA{})')
@@ -328,30 +347,34 @@ def resolution_plot_both(sys=True):
 
     # plot failures
     if failure_plot:
-        res_dockim_failed, res_num_failed, res_thresh_failed = failures
+        res_dockim_failed, res_num_failed, res_thresh_failed, res_thresh_failed_fm = failures
         thresh_res = np.concatenate((res_thresh, res_thresh_failed))
         thresh_success = np.concatenate((np.ones_like(res_thresh), np.zeros_like(res_thresh_failed)))
+        thresh_res_fm = np.concatenate((res_thresh_fm, res_thresh_failed_fm))
+        thresh_success_fm = np.concatenate((np.ones_like(res_thresh_fm), np.zeros_like(res_thresh_failed_fm)))
         dockim_res = np.concatenate((res_dockim, res_dockim_failed))
         dockim_success = np.concatenate((np.ones_like(res_dockim), np.zeros_like(res_dockim_failed)))
         # print(len(thresh_success))
         # print(len(dockim_success))
         plot_failure_rates_smooth(thresh_res, thresh_success, color=COLORS["crai"], label=r'\texttt{CrAI}')
+        plot_failure_rates_smooth(thresh_res_fm, thresh_success_fm, color=COLORS["crai_fitmap"],
+                                  label=r'\texttt{CrAI FitMap}')
         plot_failure_rates_smooth(dockim_res, dockim_success, color=COLORS["dockim"], label=r'\texttt{dock in map}')
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.xlabel('Resolution (\AA{})')
-        plt.ylabel('Binned Recall')
+        plt.ylabel('Binned F1')
         plt.ylim((0.6, 1))
-        # plt.title('Recall Smooth Estimation')
+        # plt.title('F1 Smooth Estimation')
         plt.legend()
-        plt.savefig(f'../fig_paper/python/resolution_both_recall{"_sys" if sys else ""}.pdf')
+        plt.savefig(f'../fig_paper/python/resolution_both_f1{"_sys" if sys else ""}.pdf')
         plt.show()
 
 
-def get_angles_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10):
+def get_angles_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', thresh=10, fitmap=False):
     if dockim:
         pickle_name_to_get = f'dockim_angledist{"_nano" if nano else ""}.p'
     else:
-        pickle_name_to_get = f'angledist{suffix}{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p'
+        pickle_name_to_get = f'{"fitmap_" if fitmap else ""}angledist{suffix}{"_nano" if nano else ""}{"_num" if num_setting else "_thresh"}.p'
     outname_results = os.path.join(test_path, pickle_name_to_get)
     results = pickle.load(open(outname_results, 'rb'))
     sel_angles_p = list()
@@ -359,6 +382,7 @@ def get_angles_one(test_path=None, dockim=False, nano=False, num_setting=False, 
     for pdb, pdb_res in results.items():
         if pdb_res is None:
             continue
+        dists, angles_p, angles_theta = pdb_res
         try:
             dists, angles_p, angles_theta = pdb_res
         except:
@@ -414,13 +438,22 @@ def plot_dict_hist(angle_resdict, colors=None, outname=None):
         "palette": colors
     }
     # df = df[df['Model Name'] == r'VHH dockim']
-    sns.histplot(data=df, x='angles', hue='Model Name', shrink=.9, **hist_kwargs)
+    ax = sns.histplot(data=df, x='angles', hue='Model Name', shrink=.9, **hist_kwargs)
     if use_log:
-        ax = plt.gca()
-        ax.set_xticks = bins
-        ax.xticks = bins
+        # ax = plt.gca()
+        # ax.xticks = bins
         ax.set(xscale='log')
         ax.set(yscale='log')
+        ax.minorticks_off()
+        plot_bins_x = [5, 10, 20, 40, 80, 180]
+        ax.set_xticks(plot_bins_x)
+        ax.set_xticklabels(plot_bins_x)
+
+        plot_bins_y = [0.5, 1, 2, 5, 10, 20, 50, 100]
+        ax.set_yticks(plot_bins_y)
+        ax.set_yticklabels(plot_bins_y)
+        # ax.set_xticks(bins)
+        # ax.set_xticklabels([f'{x:.1f}' for x in bins])
     # sns.histplot(all_angles[0], label=labels[0], **hist_kwargs)
     # sns.histplot(all_angles[1], label=labels[1], **hist_kwargs)
     # sns.histplot(all_angles[2], label=labels[2], **hist_kwargs)
@@ -443,23 +476,31 @@ def plot_dict_hist(angle_resdict, colors=None, outname=None):
 def plot_all():
     results = {}
     gao = partial(get_angles_one, test_path=f'../data/testset_random')
-    results[r'Fab CrAI'] = gao(nano=False, num_setting=False)
     results[r'$\overrightarrow{u_y}$'] = gao(nano=False, num_setting=False, suffix='_uy')
-    results[r'Fab dockim'] = gao(nano=False, dockim=True)
-    colors = {r'Fab CrAI': COLORS["crai"], r'Fab dockim': COLORS["dockim"], r'$\overrightarrow{u_y}$': 'grey'}
-    plot_dict_hist(results, colors=colors, outname="angles_fab")
+    results[r'CrAI'] = gao(nano=False, num_setting=False)
+    results[r'CrAI FitMap'] = gao(nano=False, num_setting=False, fitmap=True)
+    results[r'dock in map'] = gao(nano=False, dockim=True)
+    colors_fab = {r'CrAI': COLORS["crai"],
+                  r'CrAI FitMap': COLORS["crai_fitmap"],
+                  r'dock in map': COLORS["dockim"],
+                  r'$\overrightarrow{u_y}$': 'grey'}
+    plot_dict_hist(results, colors=colors_fab, outname="angles_fab")
 
     results = {}
-    results[r'VHH CrAI'] = gao(nano=True, num_setting=False)
-    results[r'VHH dockim'] = gao(nano=True, dockim=True)
-    colors = {r'VHH CrAI': COLORS["crai"], r'VHH dockim': COLORS["dockim"], r'$\overrightarrow{u_y}$': 'grey'}
-    plot_dict_hist(results, colors=colors, outname="angles_nab")
+    results[r'CrAI'] = gao(nano=True, num_setting=False)
+    results[r'CrAI FitMap'] = gao(nano=True, num_setting=False, fitmap=True)
+    results[r'dock in map'] = gao(nano=True, dockim=True)
+    colors_vhh = {r'CrAI': COLORS["crai"],
+                  r'CrAI FitMap': COLORS["crai_fitmap"],
+                  r'dock in map': COLORS["dockim"]}
+    plot_dict_hist(results, colors=colors_vhh, outname="angles_nab")
 
 
 def plot_ablation():
     results = {}
     gao = partial(get_angles_one, test_path=f'../data/testset_random')
     results['normal'] = gao(nano=False, num_setting=False)
+    results['normal_fitmap'] = gao(nano=False, num_setting=False, fitmap=True)
     results['no_ot'] = gao(nano=False, num_setting=False, suffix='_no_ot')
     results['no_pd'] = gao(nano=False, num_setting=False, suffix='_no_pd')
     results['uy'] = gao(nano=False, num_setting=False, suffix='_uy')
@@ -473,7 +514,7 @@ if __name__ == '__main__':
     # resolution_plot(dockim=True, num_setting=True)
     # resolution_plot(dockim=False, num_setting=True)
     # resolution_plot(dockim=False, num_setting=False)
-    # resolution_plot_both()
+    # resolution_plot_both(sys=True)
 
-    # plot_all()
+    plot_all()
     # plot_ablation()

@@ -12,14 +12,15 @@ if __name__ == '__main__':
 from paper.predict_test import string_rep
 
 
-def compute_hr(nano=False, test_path='../data/testset', num_setting=False, dockim=False, suffix=''):
+def compute_hr(nano=False, test_path='../data/testset', num_setting=False, dockim=False, suffix='', fitmap=False):
     """
     Compute the HR metric in the sense of the paper (using the actual number of prediction)
     :param nano:
     :param test_path:
     :return:
     """
-    all_res_path = os.path.join(test_path, f'all_res{suffix}{"_dockim" if dockim else ""}{"_nano" if nano else ""}.p')
+    all_res_path = os.path.join(test_path,
+                                f'{"fitmap_" if fitmap else ""}all_res{suffix}{"_dockim" if dockim else ""}{"_nano" if nano else ""}.p')
     all_res = pickle.load(open(all_res_path, 'rb'))
 
     num_pred_path = os.path.join(test_path, f'num_pred{suffix}{"_nano" if nano else ""}.p')
@@ -133,10 +134,12 @@ def compute_all():
                                                  dockim=True))
             compute_hr(test_path=test_path, nano=nano, num_setting=True, dockim=True)
             for num_setting in [True, False]:
-                print('Results HR for :', string_rep(sorted_split=sorted_split,
-                                                     nano=nano,
-                                                     num=num_setting))
-                compute_hr(test_path=test_path, nano=nano, num_setting=num_setting)
+                for fitmap in [True, False]:
+                    print('Results HR for :', string_rep(sorted_split=sorted_split,
+                                                         nano=nano,
+                                                         num=num_setting,
+                                                         fitmap=fitmap))
+                    compute_hr(test_path=test_path, nano=nano, num_setting=num_setting, fitmap=fitmap)
                 # no nano model
                 # if not nano:
                 #     print('non mixed')
@@ -260,7 +263,7 @@ if __name__ == '__main__':
     #     print(sorted(nab_pdb.intersection(fab_pdb)))
 
     # TO COMPUTE ONE
-    test_path = f'../data/testset'
+    # test_path = f'../data/testset'
     # test_path = f'../data/testset_random'
     # compute_hr(test_path=test_path, nano=False, num_setting=True)
     # print("nano")
