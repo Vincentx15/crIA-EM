@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pickle
+import pymol2
 import seaborn as sns
 import scipy
 import time
@@ -46,8 +47,12 @@ def match_transforms_to_angles_dist(gt_transforms, pred_transforms):
         pred_rz.append(rz)
         pred_theta_u.append(theta_u)
 
+    if len(pred_transforms) > len(gt_rotations):
+        a = 1
     dist_matrix = scipy.spatial.distance.cdist(pred_translations, gt_translations)
+    # The matching of predictions takes the form  id_pred, id_gt
     row_ind, col_ind = scipy.optimize.linear_sum_assignment(dist_matrix)
+    matching = [(row, col) for row, col in zip(row_ind, col_ind)]
     position_dists = dist_matrix[row_ind, col_ind]
 
     def get_angle(u1, u2):
@@ -58,8 +63,42 @@ def match_transforms_to_angles_dist(gt_transforms, pred_transforms):
 
     p_angles = [get_angle(pred_rz[row], gt_rz[col]) for row, col in zip(row_ind, col_ind)]
     theta_angles = [get_angle(pred_theta_u[row], gt_theta_u[col]) for row, col in zip(row_ind, col_ind)]
-    return position_dists, p_angles, theta_angles
+    return position_dists, p_angles, theta_angles, matching
 
+
+def get_rmsd_pymol(path1, path2, sel1=None, sel2=None):
+    with pymol2.PyMOL() as p:
+        p.cmd.load(path1, 'p1')
+        p.cmd.load(path2, 'p2')
+        mobile = "p1 and name CA" if sel1 is None else f"p1 and name CA and ({sel1})"
+        target = "p2 and name CA" if sel2 is None else f"p2 and name CA and ({sel2})"
+        p.cmd.align(mobile, target, cycles=0, transform=0, object="aln")
+
+        # Get the alignment object
+        aln_obj = p.cmd.get_raw_alignment("aln")
+
+        mobile_atoms = p.cmd.get_model(mobile).atom
+        target_atoms = p.cmd.get_model(target).atom
+
+        mobile_ids_to_atoms = {atom.index: atom for atom in mobile_atoms}
+        target_ids_to_atoms = {atom.index: atom for atom in target_atoms}
+
+        # Get coordinates of aligned pairs
+        mobile_coords = []
+        target_coords = []
+        for target_match, mobile_match in aln_obj:
+            mobile_coord = mobile_ids_to_atoms[mobile_match[1]].coord
+            target_coord = target_ids_to_atoms[target_match[1]].coord
+            mobile_coords.append(mobile_coord)
+            target_coords.append(target_coord)
+        # Convert to numpy arrays
+        mobile_coords = np.array(mobile_coords)
+        target_coords = np.array(target_coords)
+
+        # Calculate RMSD
+        diff_squared = np.sum((mobile_coords - target_coords) ** 2, axis=1)
+        rmsd = np.sqrt(np.mean(diff_squared))
+        return rmsd
 
 def compute_angles_dist_dockim(nano=False, test_path="../data/testset/", recompute=False):
     outname_results = os.path.join(test_path, f'dockim_angledist{"_nano" if nano else ""}.p')
@@ -97,7 +136,7 @@ def compute_angles_dist_dockim(nano=False, test_path="../data/testset/", recompu
                 all_res[pdb] = None
                 continue
             pred_transforms = pdbsel_to_transforms(out_name, antibody_selections=pymol_chain_sels, cache=False)
-            dists, angles_p, angles_theta = match_transforms_to_angles_dist(gt_transforms, pred_transforms)
+            dists, angles_p, angles_theta, matching = match_transforms_to_angles_dist(gt_transforms, pred_transforms)
             all_res[pdb] = dists, angles_p, angles_theta
         except Exception as e:
             print('failed on pdb : ', pdb)
@@ -141,19 +180,31 @@ def compute_angles_dist(nano=False, test_path="../data/testset/", num_setting=Fa
 
         # Now get the (sorted) list of predicted com
         pred_transforms = []
+        existing_preds = []
         for i in range(num_pred):
-            file_name = f'{"fitmap_" if fitmap else ""}crai_pred{suffix}{"_nano" if nano else ""}_{i}.pdb'
-            pred_name = os.path.join(pdb_dir, file_name)
-            if not os.path.exists(pred_name):
+            pred_name = f'{"fitmap_" if fitmap else ""}crai_pred{suffix}{"_nano" if nano else ""}_{i}.pdb'
+            pred_path = os.path.join(pdb_dir, pred_name)
+            if not os.path.exists(pred_path):
                 continue
+            # We need to keep track of failures for reprocessing for RMSD computation
+            existing_preds.append(pred_path)
             dummy_sel = "polymer.protein and polymer.protein"
-            i_th_transform = pdbsel_to_transforms(pred_name, antibody_selections=dummy_sel, cache=False)
+            i_th_transform = pdbsel_to_transforms(pred_path, antibody_selections=dummy_sel, cache=False)
             pred_transforms.extend(i_th_transform)
         if len(pred_transforms) == 0:
             all_res[pdb] = None
             continue
-        dists, angles_p, angles_theta = match_transforms_to_angles_dist(gt_transforms, pred_transforms)
-        all_res[pdb] = dists, angles_p, angles_theta
+        dists, angles_p, angles_theta, matching = match_transforms_to_angles_dist(gt_transforms, pred_transforms)
+
+        # Now compute RMSD for each match
+        rmsds = []
+        for pred_id, gt_id in matching:
+            pred_path = existing_preds[pred_id]
+            pymol_sel_gt = selections[gt_id]
+            rmsd = get_rmsd_pymol(path1=pred_path, path2=gt_name, sel2=pymol_sel_gt)
+            rmsds.append(rmsd)
+
+        all_res[pdb] = dists, angles_p, angles_theta, rmsds
     pickle.dump(all_res, open(outname_results, 'wb'))
     return all_res
 
@@ -509,6 +560,9 @@ def plot_ablation():
 
 if __name__ == '__main__':
     pass
+    test_path = f'../data/testset_random'
+    compute_angles_dist(nano=True, test_path=test_path, num_setting=False, recompute=True)
+
     # compute_angledist_results()
 
     # resolution_plot(dockim=True, num_setting=True)
@@ -516,5 +570,5 @@ if __name__ == '__main__':
     # resolution_plot(dockim=False, num_setting=False)
     # resolution_plot_both(sys=True)
 
-    plot_all()
+    # plot_all()
     # plot_ablation()
