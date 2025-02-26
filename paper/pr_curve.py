@@ -1,6 +1,7 @@
 import os
 import sys
 
+from functools import partial
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
@@ -10,9 +11,10 @@ if __name__ == '__main__':
     sys.path.append(os.path.join(script_dir, '..'))
 
 from paper.predict_test import string_rep
+from paper.paper_utils import COLORS, LABELS
 
 
-def compute_hr(nano=False, test_path='../data/testset', num_setting=False, dockim=False, suffix='', fitmap=False):
+def compute_metrics(nano=False, test_path='../data/testset', num_setting=False, dockim=False, suffix='', fitmap=False):
     """
     Compute the HR metric in the sense of the paper (using the actual number of prediction)
     :param nano:
@@ -94,7 +96,7 @@ def compute_hr(nano=False, test_path='../data/testset', num_setting=False, docki
 
     # print('Overpredictions : ', len(overpreds_list), sum([x[1] for x in overpreds_list]), overpreds_list)
     # print('Underpredictions : ', len(underpreds_list), sum([x[1] for x in underpreds_list]), underpreds_list)
-    failed_sys = [x[0] for x in overpreds_list + underpreds_list]
+    # failed_sys = [x[0] for x in overpreds_list + underpreds_list]
 
     # hit_rate_sys = np.mean([100 * (1 - errors / num_gt) for errors, num_gt in all_hr.values()])
     # hit_rate_ab = 100 * (1 - np.sum([errors for errors, _ in all_hr.values()]) / np.sum(
@@ -120,7 +122,7 @@ def compute_hr(nano=False, test_path='../data/testset', num_setting=False, docki
     f1_sys = np.mean([2 * tp / (2 * tp + fp + fn) for tp, fn, fp in all_pos_neg.values()]) * 100
     f1_ab = np.sum([2 * tp for tp, fn, fn in all_pos_neg.values()]) / np.sum(
         [(2 * tp + fp + fn) for tp, fn, fp in all_pos_neg.values()]) * 100
-    print(f"{f1_sys:.1f}")
+    # print(f"{f1_sys:.1f}")
     print(f"{f1_ab:.1f}")
     return overpreds_list + underpreds_list
 
@@ -129,17 +131,17 @@ def compute_all():
     for sorted_split in [True, False]:
         test_path = f'../data/testset{"" if sorted_split else "_random"}'
         for nano in [False, True]:
-            print('Results HR for :', string_rep(sorted_split=sorted_split,
-                                                 nano=nano,
-                                                 dockim=True))
-            compute_hr(test_path=test_path, nano=nano, num_setting=True, dockim=True)
+            print('Results for :', string_rep(sorted_split=sorted_split,
+                                              nano=nano,
+                                              dockim=True))
+            compute_metrics(test_path=test_path, nano=nano, num_setting=True, dockim=True)
             for num_setting in [True, False]:
                 for fitmap in [True, False]:
                     print('Results HR for :', string_rep(sorted_split=sorted_split,
                                                          nano=nano,
                                                          num=num_setting,
                                                          fitmap=fitmap))
-                    compute_hr(test_path=test_path, nano=nano, num_setting=num_setting, fitmap=fitmap)
+                    compute_metrics(test_path=test_path, nano=nano, num_setting=num_setting, fitmap=fitmap)
                 # no nano model
                 # if not nano:
                 #     print('non mixed')
@@ -147,16 +149,11 @@ def compute_all():
 
 
 def compute_ablations():
-    test_path = '../data/testset_random'
-    print("no_ot")
-    compute_hr(test_path=test_path, nano=False, num_setting=True, suffix='_no_ot')
-    compute_hr(test_path=test_path, nano=False, num_setting=False, suffix='_no_ot')
-    print("no_pd")
-    compute_hr(test_path=test_path, nano=False, num_setting=True, suffix='_no_pd')
-    compute_hr(test_path=test_path, nano=False, num_setting=False, suffix='_no_pd')
-    print("uy")
-    compute_hr(test_path=test_path, nano=False, num_setting=True, suffix='_uy')
-    compute_hr(test_path=test_path, nano=False, num_setting=False, suffix='_uy')
+    cm_ab = partial(compute_metrics, nano=False, test_path=f'../data/testset_random')
+    for suffix in ["", "_no_ot", "_no_pd", "_uy"]:
+        print("Crai" + suffix)
+        for num_setting in [True, False]:
+            cm_ab(num_setting=num_setting, suffix=suffix)
 
 
 def get_mean_std(hitlist):
@@ -172,14 +169,13 @@ def plot_in_between(ax, x_axis, mean, std, **kwargs):
     upper[upper > 1] = 1
     lower = mean - std
     lower[lower < 0] = 0
-    ax.fill_between(x_axis, upper, lower, alpha=0.5)
+    color = kwargs['color'] if "color" in kwargs else None
+    ax.fill_between(x_axis, upper, lower, alpha=0.5, color=color)
 
 
 def plot_pr_curve(nano=False, test_path='../data/testset', title=None, savefig=None):
-    methods = {
-        r'\texttt{CrAI}': os.path.join(test_path, f'all_res{"_nano" if nano else ""}.p'),
-        r'\texttt{dock in map}': os.path.join(test_path, f'all_res_dockim{"_nano" if nano else ""}.p'),
-    }
+    methods = {"dockim": os.path.join(test_path, f'all_res_dockim{"_nano" if nano else ""}.p'),
+               "crai": os.path.join(test_path, f'all_res{"_nano" if nano else ""}.p')}
     # if not nano:
     #     methods['fab'] = os.path.join(test_path, f'all_res_fab.p')
 
@@ -200,20 +196,20 @@ def plot_pr_curve(nano=False, test_path='../data/testset', title=None, savefig=N
             gt_hits_thresh = np.array(gt_hits_thresh)
             hits_thresh = np.array(hits_thresh)
             num_gt = np.max(gt_hits_thresh)
-            precision = hits_thresh / gt_hits_thresh
+            recall = hits_thresh / gt_hits_thresh
             method_lists = all_parsed_dict[method]
-            method_lists[0].append(precision)
+            method_lists[0].append(recall)
             method_lists[1].append(gt_hits_thresh / num_gt)
             method_lists[2].append(hits_thresh / num_gt)
-            # if precision[-1] < 0.9:
+            # if recall[-1] < 0.9:
             #     print(pdb, method, num_gt, hits_thresh)
 
     plotting_dict = {}
-    for method, (all_precisions, all_gt, all_preds) in all_parsed_dict.items():
-        all_precisions_mean, all_precisions_std = get_mean_std(all_precisions)
+    for method, (all_recalls, all_gt, all_preds) in all_parsed_dict.items():
+        all_recalls_mean, all_recalls_std = get_mean_std(all_recalls)
         all_gt_mean, all_gt_std = get_mean_std(all_gt)
         all_preds_mean, all_preds_std = get_mean_std(all_preds)
-        plotting_dict[method] = (all_precisions_mean, all_precisions_std, all_gt_mean,
+        plotting_dict[method] = (all_recalls_mean, all_recalls_std, all_gt_mean,
                                  all_gt_std, all_preds_mean, all_preds_std)
 
     # Setup matplotlib
@@ -222,21 +218,22 @@ def plot_pr_curve(nano=False, test_path='../data/testset', title=None, savefig=N
     plt.rc('grid', color='grey', alpha=0.5)
     plt.grid(True)
     ax = plt.gca()
-    ax.set_xlabel(r'Num prediction')
-    ax.set_ylabel(r'Hits')
+    ax.set_xlabel(r'Number of prediction')
+    ax.set_ylabel(r'Recall')
     x = range(1, 11)
 
     for i, (method, results) in enumerate(plotting_dict.items()):
-        all_precisions_mean, all_precisions_std, all_gt_mean, all_gt_std, all_preds_mean, all_preds_std = results
-        # plot_in_between(ax, x, all_precisions_mean, all_precisions_std, label=method)
+        all_recalls_mean, all_recalls_std, all_gt_mean, all_gt_std, all_preds_mean, all_preds_std = results
+        # plot_in_between(ax, x, all_recalls_mean, all_recalls_std, label=method)
         if i == 0:
-            plot_in_between(ax, x, all_gt_mean, all_gt_std, label=r'\texttt{Ground Truth}')
-        plot_in_between(ax, x, all_preds_mean, all_preds_std, label=method)
+            plot_in_between(ax, x, all_gt_mean, all_gt_std, label=LABELS['gt'], color="tab:green")
+        plot_in_between(ax, x, all_preds_mean, all_preds_std, label=LABELS[method], color=COLORS[method])
 
     # plt.xticks(['1', '2', '4', '6', '8', '10'])
     plt.xticks([1, 2, 4, 6, 8, 10])
     plt.xlim((1, 10))
     plt.ylim((0., 1.1))
+    # plt.ylim((0.5, 1.1))
     # plt.ylim((0.5, 1))
     plt.legend(loc='lower right')
     if title is not None:
@@ -244,6 +241,17 @@ def plot_pr_curve(nano=False, test_path='../data/testset', title=None, savefig=N
     if savefig is not None:
         plt.savefig(savefig)
     plt.show()
+
+
+def plot_all():
+    for sorted_split in [True, False]:
+        for nano in [True, False]:
+            test_path = f'../data/testset{"" if sorted_split else "_random"}'
+            sorted_title = rf'\texttt{{{"sorted" if sorted_split else "random"}}}'
+            nano_title = f'{"VHH" if nano else "Fabs"}'
+            title = rf'Hit rates for {sorted_title} {nano_title}'
+            save_title = f'../fig_paper/python/pr_{"sorted" if sorted_split else "random"}_{"nano" if nano else "fab"}.pdf'
+            plot_pr_curve(nano=nano, test_path=test_path, title=title, savefig=save_title)
 
 
 if __name__ == '__main__':
@@ -271,17 +279,10 @@ if __name__ == '__main__':
     # compute_hr(test_path=test_path, nano=True, use_mixed_model=True, num_setting=True, dockim=True)
 
     # # TO COMPUTE ALL
-    compute_all()
+    # compute_all()
 
     # # TO COMPUTE ABLATIONS
     # compute_ablations()
 
     # TO PLOT ALL
-    # for sorted_split in [True, False]:
-    #     for nano in [True, False]:
-    #         test_path = f'../data/testset{"" if sorted_split else "_random"}'
-    #         sorted_title = rf'\texttt{{{"sorted" if sorted_split else "random"}}}'
-    #         nano_title = f'{"VHH" if nano else "Fabs"}'
-    #         title = rf'Hit rates for {sorted_title} {nano_title}'
-    #         save_title = f'../fig_paper/python/{"sorted" if sorted_split else "random"}_{"nano" if nano else "fab"}.pdf'
-    #         plot_pr_curve(nano=nano, test_path=test_path, title=title, savefig=save_title)
+    plot_all()

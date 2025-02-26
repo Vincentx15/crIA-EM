@@ -18,13 +18,7 @@ if __name__ == '__main__':
 from paper.predict_test import string_rep
 from utils.object_detection import pdbsel_to_transforms
 from utils.rotation import rotation_to_supervision
-from paper.paper_utils import plot_failure_rates_smooth
-
-COLORS = {
-    'crai': 'tab:purple',
-    'crai_fitmap': 'tab:blue',
-    'dockim': 'tab:red',
-}
+from paper.paper_utils import plot_failure_rates_smooth, COLORS, LABELS
 
 
 def match_transforms_to_angles_dist(gt_transforms, pred_transforms):
@@ -294,6 +288,15 @@ def get_distances_all(verbose=True, fitmap=False, use_rmsds=False):
     return res_dict
 
 
+def print_distances_ablation(use_rmsds=False, num_setting=False):
+    gao = partial(get_distance_one, use_rmsds=use_rmsds, num_setting=num_setting, nano=False,
+                  test_path=f'../data/testset_random')
+    gao()
+    gao(suffix='_no_ot')
+    gao(suffix='_no_pd')
+    gao(suffix='_uy')
+
+
 def scatter(x, y, alpha=0.3, noise_strength=0.02, fit=True, display_fit=True, colors=None, label=None):
     x = x.copy()
     y = y.copy()
@@ -401,15 +404,15 @@ def resolution_plot_both(sys=True, use_rmsds=False):
     if scatter_dists:
         res_dockim, dists_dockim, res_num, dists_num, res_thresh, dists_thresh, res_thresh_fm, dists_thresh_fm = success_dists
         # scatter(res_num, dists_num, colors=['blue], display_fit=False)
-        scatter(res_thresh, dists_thresh, colors=[COLORS["crai"]] * 2, display_fit=False, label=r'\texttt{CrAI}')
+        scatter(res_thresh, dists_thresh, colors=[COLORS["crai"]] * 2, display_fit=False, label=LABELS['crai'])
         scatter(res_thresh_fm, dists_thresh_fm, colors=[COLORS["crai_fitmap"]] * 2, display_fit=False,
-                label=r'\texttt{CrAI FitMap}')
+                label=LABELS['crai_fitmap'])
         scatter(res_dockim, dists_dockim, colors=[COLORS["dockim"]] * 2, display_fit=False,
-                label=r'\texttt{dock in map}')
+                label=LABELS['dockim'])
         plt.xlabel(r'Resolution (\AA{})')
         plt.ylabel(r'Distance (\AA{})')
-        plt.legend(loc='center right')
-        plt.savefig(f'../fig_paper/python/resolution_both_distances{"_sys" if sys else ""}.pdf')
+        plt.legend(loc='upper right')
+        plt.savefig(f'../fig_paper/python/resolution_both_distances{"_sys" if sys else ""}.svg')
         plt.show()
 
     # plot failures
@@ -423,17 +426,18 @@ def resolution_plot_both(sys=True, use_rmsds=False):
         dockim_success = np.concatenate((np.ones_like(res_dockim), np.zeros_like(res_dockim_failed)))
         # print(len(thresh_success))
         # print(len(dockim_success))
-        plot_failure_rates_smooth(thresh_res, thresh_success, color=COLORS["crai"], label=r'\texttt{CrAI}')
+        plot_failure_rates_smooth(thresh_res, thresh_success, color=COLORS["crai"], label=LABELS['crai'])
         plot_failure_rates_smooth(thresh_res_fm, thresh_success_fm, color=COLORS["crai_fitmap"],
-                                  label=r'\texttt{CrAI FitMap}')
-        plot_failure_rates_smooth(dockim_res, dockim_success, color=COLORS["dockim"], label=r'\texttt{dock in map}')
+                                  label=LABELS['crai_fitmap'])
+        plot_failure_rates_smooth(dockim_res, dockim_success, color=COLORS["dockim"], label=LABELS['dockim'])
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.xlabel('Resolution (\AA{})')
         plt.ylabel('Binned F1')
-        plt.ylim((0.6, 1))
+        # plt.ylim((0.6, 1))
         # plt.title('F1 Smooth Estimation')
-        plt.legend()
-        plt.savefig(f'../fig_paper/python/resolution_both_f1{"_sys" if sys else ""}.pdf')
+        # plt.legend()
+        plt.legend(loc='center right')
+        plt.savefig(f'../fig_paper/python/resolution_both_f1{"_sys" if sys else ""}.svg')
         plt.show()
 
 
@@ -459,7 +463,7 @@ def get_angles_one(test_path=None, dockim=False, nano=False, num_setting=False, 
     return sel_angles_p
 
 
-def plot_dict_hist(angle_resdict, colors=None, outname=None):
+def plot_dict_hist(angle_resdict, colors=None, outname=None, min_val=5, max_val=180):
     """
     Expected to receive keys as legend and values as lists of values
     :return:
@@ -474,8 +478,7 @@ def plot_dict_hist(angle_resdict, colors=None, outname=None):
     for label, angles in angle_resdict.items():
         all_angles.extend(angles)
         all_names.extend([label for _ in range(len(angles))])
-    min_val = 3
-    max_val = 180
+
     all_angles = [min(angle, max_val) for angle in all_angles]
     all_angles = [max(angle, min_val) for angle in all_angles]
     # all_angles = [int(angle) for angle in all_angles]
@@ -539,35 +542,40 @@ def plot_dict_hist(angle_resdict, colors=None, outname=None):
 def plot_all():
     results = {}
     gao = partial(get_angles_one, test_path=f'../data/testset_random')
-    results[r'$\overrightarrow{u_y}$'] = gao(nano=False, num_setting=False, suffix='_uy')
-    results[r'CrAI'] = gao(nano=False, num_setting=False)
-    results[r'CrAI FitMap'] = gao(nano=False, num_setting=False, fitmap=True)
-    results[r'dock in map'] = gao(nano=False, dockim=True)
-    colors_fab = {r'CrAI': COLORS["crai"],
-                  r'CrAI FitMap': COLORS["crai_fitmap"],
-                  r'dock in map': COLORS["dockim"],
+    # results[r'$\overrightarrow{u_y}$'] = gao(nano=False, num_setting=False, suffix='_uy')
+    results[r'\texttt{CrAI}'] = gao(nano=False, num_setting=False)
+    results[r'\texttt{CrAI FitMap}'] = gao(nano=False, num_setting=False, fitmap=True)
+    results[r'\texttt{dock in map}'] = gao(nano=False, dockim=True)
+    colors_fab = {r'\texttt{CrAI}': COLORS["crai"],
+                  r'\texttt{CrAI FitMap}': COLORS["crai_fitmap"],
+                  r'\texttt{dock in map}': COLORS["dockim"],
                   r'$\overrightarrow{u_y}$': 'grey'}
     plot_dict_hist(results, colors=colors_fab, outname="angles_fab")
 
     results = {}
-    results[r'CrAI'] = gao(nano=True, num_setting=False)
-    results[r'CrAI FitMap'] = gao(nano=True, num_setting=False, fitmap=True)
-    results[r'dock in map'] = gao(nano=True, dockim=True)
-    colors_vhh = {r'CrAI': COLORS["crai"],
-                  r'CrAI FitMap': COLORS["crai_fitmap"],
-                  r'dock in map': COLORS["dockim"]}
+    results[r'\texttt{CrAI}'] = gao(nano=True, num_setting=False)
+    results[r'\texttt{CrAI FitMap}'] = gao(nano=True, num_setting=False, fitmap=True)
+    results[r'\texttt{dock in map}'] = gao(nano=True, dockim=True)
+    colors_vhh = {r'\texttt{CrAI}': COLORS["crai"],
+                  r'\texttt{CrAI FitMap}': COLORS["crai_fitmap"],
+                  r'\texttt{dock in map}': COLORS["dockim"]}
     plot_dict_hist(results, colors=colors_vhh, outname="angles_nab")
 
 
-def plot_ablation():
+def plot_ablation(num_setting=False):
     results = {}
-    gao = partial(get_angles_one, test_path=f'../data/testset_random')
-    results['normal'] = gao(nano=False, num_setting=False)
-    results['normal_fitmap'] = gao(nano=False, num_setting=False, fitmap=True)
-    results['no_ot'] = gao(nano=False, num_setting=False, suffix='_no_ot')
-    results['no_pd'] = gao(nano=False, num_setting=False, suffix='_no_pd')
-    results['uy'] = gao(nano=False, num_setting=False, suffix='_uy')
-    plot_dict_hist(results)
+    gao = partial(get_angles_one, num_setting=num_setting, nano=False, test_path=f'../data/testset_random')
+    results[r'\texttt{CrAI}'] = gao()
+    results[r'\texttt{CrAI FitMap}'] = gao(fitmap=True)
+    # results['no_ot'] = gao(suffix='_no_ot')
+    # results['no_pd'] = gao(suffix='_no_pd')
+    results[r'$\overrightarrow{u_y}$'] = gao(suffix='_uy')
+    results[r'$\overrightarrow{u_y}$ \texttt{FitMap}'] = gao(suffix='_uy', fitmap=True)
+    colors_ablation = {r'\texttt{CrAI}': COLORS["crai"],
+                       r'\texttt{CrAI FitMap}': COLORS["crai_fitmap"],
+                       r'$\overrightarrow{u_y}$': COLORS["uy"],
+                       r'$\overrightarrow{u_y}$ \texttt{FitMap}': COLORS["uy_fitmap"]}
+    plot_dict_hist(results, colors=colors_ablation, outname="angles_ablation")
 
 
 if __name__ == '__main__':
@@ -581,7 +589,7 @@ if __name__ == '__main__':
     # resolution_plot(dockim=True, num_setting=True)
     # resolution_plot(dockim=False, num_setting=True)
     # resolution_plot(dockim=False, num_setting=False)
-    resolution_plot_both(sys=False, use_rmsds=True)
+    resolution_plot_both(sys=True, use_rmsds=True)
 
     # plot_all()
     # plot_ablation()

@@ -1,6 +1,25 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import gaussian_kde
+import numpy as np
+import seaborn as sns
+
+matplotlib_palette = sns.color_palette("tab10")
+muted_palette = sns.color_palette("dark")
+COLORS = {
+    'crai': matplotlib_palette[4],
+    'crai_fitmap': matplotlib_palette[0],
+    'dockim': matplotlib_palette[3],
+    'uy': muted_palette[4],
+    'uy_fitmap': muted_palette[0],
+}
+
+LABELS = {
+    'gt': r'\texttt{Ground Truth}',
+    'crai': r'\texttt{CrAI}',
+    'crai_fitmap':r'\texttt{CrAI FitMap}',
+    'dockim': r'\texttt{dock in map}',
+    'uy': r'$\overrightarrow{u_y}$',
+    'uy_fitmap':'$\overrightarrow{u_y} FitMap$',
+}
 
 
 def plot_failure_rates_smooth(T, results, window_size=3, color='red', label='Smooth estimate'):
@@ -45,26 +64,4 @@ def plot_failure_rates_smooth(T, results, window_size=3, color='red', label='Smo
 
 # Example usage
 if __name__ == "__main__":
-    # Generate sample data
-    np.random.seed(42)
-    T = np.random.uniform(0, 10, 1000)
-    probability_of_failure = 1 / (1 + np.exp(-(T - 5)))  # Sigmoid function
-    results = np.random.random(len(T)) > probability_of_failure
-
-    # Create plots with different methods
-    plt.figure(figsize=(15, 5))
-
-    plt.subplot(131)
-    plot_failure_rates_smooth(T, results, method='rolling')
-    plt.title('Rolling Window Method')
-
-    plt.subplot(132)
-    plot_failure_rates_smooth(T, results, method='kde')
-    plt.title('KDE Method')
-
-    plt.subplot(133)
-    plot_failure_rates_smooth(T, results, method='both')
-    plt.title('Both Methods Compared')
-
-    plt.tight_layout()
-    plt.show()
+    pass
