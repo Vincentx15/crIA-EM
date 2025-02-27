@@ -143,6 +143,8 @@ def transforms_to_pdb(transforms, out_name=None, split_pred=False):
                 p.cmd.alter(hit + ' and chain H', f"chain='{nano_chain}'")
                 all_predicted_chains.append(nano_chain)
                 last_chain += 1
+                if last_chain >= len(LOWERCASE):
+                    break
             else:
                 p.cmd.copy(hit, "ref_fv")
                 fv_chains = UPPERCASE[last_chain], UPPERCASE[last_chain + 1]
@@ -150,6 +152,8 @@ def transforms_to_pdb(transforms, out_name=None, split_pred=False):
                 p.cmd.alter(hit + ' and chain B', f"chain='{fv_chains[1]}'")
                 all_predicted_chains.append(fv_chains)
                 last_chain += 2
+                if last_chain + 1 >= len(UPPERCASE):
+                    break
             coords_ref = p.cmd.get_coords(hit)
             rotated = rotation.apply(coords_ref)
             new_coords = rotated + translation[None, :]

@@ -295,12 +295,16 @@ class MRCGrid:
                 np.savez(file=outname, data=self.data, voxel_size=self.voxel_size, origin=self.origin)
 
     @staticmethod
-    def from_npz(npz_file, normalize=None):
+    def from_npz(npz_file, normalize_mode=None):
         npz_archive = np.load(npz_file)
         return MRCGrid(data=npz_archive["data"],
                        voxel_size=npz_archive["voxel_size"],
                        origin=npz_archive["origin"],
-                       normalize=normalize)
+                       normalize_mode=normalize_mode)
+
+    @property
+    def volume(self):
+        return float(np.prod(np.array(self.voxel_size*self.data.shape)))
 
 
 if __name__ == '__main__':
