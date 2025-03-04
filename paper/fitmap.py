@@ -99,6 +99,6 @@ def get_hr_all_fitmap():
 
 
 if __name__ == '__main__':
-    # compute_all_fitmap_all()
     # compute_all_fitmap_time()
+    compute_all_fitmap_all()
     get_hr_all_fitmap()

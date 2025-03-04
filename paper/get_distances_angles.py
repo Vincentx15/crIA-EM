@@ -60,13 +60,13 @@ def match_transforms_to_angles_dist(gt_transforms, pred_transforms):
     return position_dists, p_angles, theta_angles, matching
 
 
-def get_rmsd_pymol(path1, path2, sel1=None, sel2=None):
+def get_rmsd_pymol(path1, path2, sel1=None, sel2=None, cycles=0, transform=0):
     with pymol2.PyMOL() as p:
         p.cmd.load(path1, 'p1')
         p.cmd.load(path2, 'p2')
         mobile = "p1 and name CA" if sel1 is None else f"p1 and name CA and ({sel1})"
         target = "p2 and name CA" if sel2 is None else f"p2 and name CA and ({sel2})"
-        p.cmd.align(mobile, target, cycles=0, transform=0, object="aln")
+        p.cmd.align(mobile, target, cycles=cycles, transform=transform, object="aln")
 
         # Get the alignment object
         aln_obj = p.cmd.get_raw_alignment("aln")
@@ -232,6 +232,45 @@ def compute_angledist_results(recompute=False):
         compute_angles_dist_partial(nano=False, test_path=test_path, num_setting=False, suffix='_uy', fitmap=fitmap)
         compute_angles_dist_partial(nano=False, test_path=test_path, num_setting=False, suffix='_no_ot', fitmap=fitmap)
         compute_angles_dist_partial(nano=False, test_path=test_path, num_setting=False, suffix='_no_pd', fitmap=fitmap)
+
+
+def compute_mean_rmsd_results():
+    outname_results = "raw_rmsds.p"
+    if os.path.exists(outname_results):
+        all_res_both = pickle.load(open(outname_results, 'rb'))
+    else:
+        all_res_both = []
+        test_path = f'../data/testset_random'
+        for nano in [False, True]:
+            pdb_selections = pickle.load(open(os.path.join(test_path, f'pdb_sels{"_nano" if nano else ""}.p'), 'rb'))
+            time_init = time.time()
+            all_res = {}
+            for step, ((pdb, mrc, resolution), selections) in enumerate(sorted(pdb_selections.items())):
+                if not step % 20:
+                    print(f"Done {step} / {len(pdb_selections)} in {time.time() - time_init}")
+                pdb_dir = os.path.join(test_path, f'{pdb}_{mrc}')
+                gt_name = os.path.join(pdb_dir, f'{pdb}.cif')
+
+                # Now get the (sorted) list of predicted com
+                pred_name = f'crai_pred{"_nano" if nano else ""}_{0}.pdb'
+                pred_path = os.path.join(pdb_dir, pred_name)
+                if not os.path.exists(pred_path):
+                    continue
+
+                # Now compute RMSD for each match
+                rmsds = []
+                for pymol_sel_gt in selections:
+                    rmsd = get_rmsd_pymol(path1=pred_path, path2=gt_name, sel2=pymol_sel_gt, transform=1, cycles=5)
+                    rmsds.append(rmsd)
+                all_res[pdb] = rmsds
+            all_res_both.append(all_res)
+        pickle.dump(all_res_both, open(outname_results, 'wb'))
+    fab_rmsds = [x for y in all_res_both[0].values() for x in y]
+    nano_rmsds = [x for y in all_res_both[1].values() for x in y]
+    mean_fab = np.mean(fab_rmsds)
+    mean_nano = np.mean(nano_rmsds)
+    mean_both = np.mean(fab_rmsds + nano_rmsds)
+    print("Mean fab, nano , all: ", mean_fab, mean_nano, mean_both)
 
 
 def get_distance_one(test_path=None, dockim=False, nano=False, num_setting=False, suffix='', verbose=True,
@@ -584,12 +623,14 @@ if __name__ == '__main__':
     # compute_angles_dist(nano=True, test_path=test_path, num_setting=False, recompute=True)
     # compute_angles_dist_dockim(nano=True, test_path=test_path, recompute=True)
 
-    # compute_angledist_results(recompute=True)
+    compute_angledist_results(recompute=False)
 
     # resolution_plot(dockim=True, num_setting=True)
     # resolution_plot(dockim=False, num_setting=True)
     # resolution_plot(dockim=False, num_setting=False)
     resolution_plot_both(sys=True, use_rmsds=True)
 
-    # plot_all()
-    # plot_ablation()
+    plot_all()
+    plot_ablation()
+
+    compute_mean_rmsd_results()

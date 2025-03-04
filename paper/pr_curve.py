@@ -279,10 +279,10 @@ if __name__ == '__main__':
     # compute_hr(test_path=test_path, nano=True, use_mixed_model=True, num_setting=True, dockim=True)
 
     # # TO COMPUTE ALL
-    # compute_all()
+    compute_all()
 
     # # TO COMPUTE ABLATIONS
-    # compute_ablations()
+    compute_ablations()
 
     # TO PLOT ALL
     plot_all()
