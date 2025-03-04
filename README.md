@@ -1,5 +1,7 @@
 # CrAI
 
+[![DOI](https://zenodo.org/badge/613971614.svg)](https://doi.org/10.5281/zenodo.14967868)
+
 This is the accompanying code for the paper "Finding Antibodies in Cryo-EM densities with CrAI" by Vincent Mallet, Chiara Rapisarda, Hervé Minoux and Maks Ovsjanikov.
 The goal of this tool is to predict the position and orientation of antibodies in Cryo-EM densities.
 
